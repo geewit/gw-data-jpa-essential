@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonView;
 import io.geewit.core.jackson.view.View;
 import io.geewit.data.jpa.essential.listener.PersistenceListener;
-import org.hibernate.envers.Audited;
-
 import javax.persistence.*;
 import java.util.Date;
 
@@ -61,7 +59,6 @@ public abstract class ListenedEntity implements java.io.Serializable {
 //        this.updaterId = updaterId;
 //    }
 
-    @Audited
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "update_time", columnDefinition = "datetime default current_timestamp on update current_timestamp")
     public Date getUpdateTime() {
@@ -72,7 +69,6 @@ public abstract class ListenedEntity implements java.io.Serializable {
         this.updateTime = updateTime;
     }
 
-    @Audited
     @Column(name = "del_flag", columnDefinition = "bool not null default false")
     public Boolean getDelFlag() {
         return delFlag;
