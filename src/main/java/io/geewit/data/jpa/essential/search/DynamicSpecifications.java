@@ -237,12 +237,12 @@ public class DynamicSpecifications {
         if(pathClass == null || objValue == null) {
             return null;
         }
-        String strValue = objValue.toString();
         if(String.class.isAssignableFrom(pathClass)) {
             return objValue;
         } else if(pathClass.isEnum()) {
             logger.debug("path is enum");
             try {
+                String strValue = ((Enum)objValue).name();
                 return Enum.valueOf(pathClass, strValue);
             } catch (Exception e) {
                 logger.warn(e.getMessage(), e);
@@ -250,6 +250,7 @@ public class DynamicSpecifications {
             }
         } else if(Date.class.isAssignableFrom(pathClass)) {
             try {
+                String strValue = objValue.toString();
                 if(betweenType != null) {
                     switch (betweenType) {
                         case LOW: {
@@ -270,6 +271,7 @@ public class DynamicSpecifications {
                 return null;
             }
         } else if(Number.class.isAssignableFrom(pathClass)) {
+            String strValue = objValue.toString();
             return org.springframework.util.NumberUtils.parseNumber(strValue, pathClass);
         }
         if(needComparable && !Comparable.class.isAssignableFrom(pathClass)) {
