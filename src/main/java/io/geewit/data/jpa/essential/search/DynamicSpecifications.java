@@ -233,7 +233,7 @@ public class DynamicSpecifications {
         };
     }
 
-    public static Object parseValue(Class pathClass, Object objValue, boolean needComparable, BetweenType betweenType) {
+    private static Object parseValue(Class pathClass, Object objValue, boolean needComparable, BetweenType betweenType) {
         if(pathClass == null || objValue == null) {
             return null;
         }
@@ -241,16 +241,10 @@ public class DynamicSpecifications {
             return objValue;
         } else if(pathClass.isEnum()) {
             logger.debug("path is enum");
-            try {
-                String strValue = ((Enum)objValue).name();
-                return Enum.valueOf(pathClass, strValue);
-            } catch (Exception e) {
-                logger.warn(e.getMessage(), e);
-                return null;
-            }
+            return objValue;
         } else if(Date.class.isAssignableFrom(pathClass)) {
+            String strValue = objValue.toString();
             try {
-                String strValue = objValue.toString();
                 if(betweenType != null) {
                     switch (betweenType) {
                         case LOW: {
