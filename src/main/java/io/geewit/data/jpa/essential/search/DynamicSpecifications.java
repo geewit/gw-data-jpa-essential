@@ -241,7 +241,17 @@ public class DynamicSpecifications {
             return objValue;
         } else if(pathClass.isEnum()) {
             logger.debug("path is enum");
-            return objValue;
+            if(objValue instanceof Enum) {
+                return objValue;
+            } else {
+                String strValue = objValue.toString();
+                try {
+                    return Enum.valueOf(pathClass, strValue);
+                } catch (IllegalArgumentException e) {
+                    logger.warn(e.getMessage());
+                    return null;
+                }
+            }
         } else if(Date.class.isAssignableFrom(pathClass)) {
             String strValue = objValue.toString();
             try {
