@@ -36,7 +36,7 @@ import java.util.*;
  * @author geewit
  * @since 2015-05-18
  */
-@SuppressWarnings({"unchecked", "unused"})
+@SuppressWarnings({"unused"})
 public class CalendarFormatTableGenerator extends TableGenerator {
     private static final CoreMessageLogger LOG = Logger.getMessageLogger(
             CoreMessageLogger.class,
@@ -70,14 +70,13 @@ public class CalendarFormatTableGenerator extends TableGenerator {
     @Override
     public Serializable generate(SharedSessionContractImplementor session, Object obj) {
         LOG.log(Logger.Level.DEBUG, "segmentValue = " + segmentValue);
-        Serializable generated;
         final SqlStatementLogger statementLogger = session.getFactory().getServiceRegistry()
                 .getService(JdbcServices.class)
                 .getSqlStatementLogger();
         final SessionEventListenerManager statsCollector = session.getEventListenerManager();
         final Calendar now = Calendar.getInstance(Locale.CHINA);
         final java.sql.Date nowDate = new java.sql.Date(now.getTimeInMillis());
-        generated = optimizer.generate(
+        Serializable generated = optimizer.generate(
                 new AccessCallback() {
                     @Override
                     public IntegralDataTypeHolder getNextValue() {
@@ -120,7 +119,7 @@ public class CalendarFormatTableGenerator extends TableGenerator {
                                                     }
                                                 }
                                                 selectRS.close();
-                                                if(needRefresh) {
+                                                if (needRefresh) {
                                                     try (PreparedStatement refreshPS = prepareStatement(connection, refreshQuery, statementLogger, statsCollector)) {
                                                         final IntegralDataTypeHolder updateValue = value.copy();
                                                         if (optimizer.applyIncrementSizeToSourceValues()) {
@@ -198,7 +197,6 @@ public class CalendarFormatTableGenerator extends TableGenerator {
         this.refreshQuery = buildRefreshQuery();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected String buildSelectQuery(Dialect dialect) {
         final String alias = "tbl";

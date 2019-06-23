@@ -16,7 +16,7 @@ import java.util.List;
  @author gelif
  @since  2015-5-18
  */
-@SuppressWarnings({"unchecked", "unused"})
+@SuppressWarnings({"unused"})
 public class SortFactory {
     private final static Direction defaultDirection = Direction.DESC;
 

@@ -9,7 +9,7 @@ import org.springframework.data.domain.Sort;
  @author gelif
  @since  2015-5-18
  */
-@SuppressWarnings({"unchecked", "unused"})
+@SuppressWarnings({"unused"})
 public class PageableFactory {
     private final static int defaultSize = 20;
     private final static String defaultSort = null;

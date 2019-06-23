@@ -14,7 +14,7 @@ import java.util.Properties;
  @author geewit
  @since  2015-05-18
  */
-@SuppressWarnings({"unchecked", "unused"})
+@SuppressWarnings({"unused"})
 public class FormatTableGenerator extends TableGenerator {
 
     public static final String FORMAT_PARAM = "format";

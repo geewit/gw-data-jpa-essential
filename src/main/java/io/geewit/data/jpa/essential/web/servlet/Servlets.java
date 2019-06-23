@@ -19,7 +19,7 @@ import java.util.Map.Entry;
  @author geewit
  @since  2015-05-18
  */
-@SuppressWarnings({"unchecked", "unused"})
+@SuppressWarnings({"unused"})
 public class Servlets {
     private final static Logger logger = LoggerFactory.getLogger(Servlets.class);
 
