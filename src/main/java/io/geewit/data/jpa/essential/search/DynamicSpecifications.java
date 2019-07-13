@@ -2,6 +2,7 @@ package io.geewit.data.jpa.essential.search;
 
 import io.geewit.core.exception.CustomizedException;
 import com.google.common.collect.Lists;
+import io.geewit.core.exception.ProcessedException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -196,7 +197,7 @@ public class DynamicSpecifications {
                             break;
                         }
                         default: {
-                            throw new CustomizedException("错误的参数");
+                            throw new ProcessedException("错误的参数");
                         }
                     }
                 }
@@ -264,7 +265,7 @@ public class DynamicSpecifications {
                             return toDate(strValue);
                         }
                         default: {
-                            throw new CustomizedException("错误的参数");
+                            throw new ProcessedException("错误的参数");
                         }
                     }
                 } else {
@@ -323,7 +324,7 @@ public class DynamicSpecifications {
                     break;
                 }
                 default: {
-                    throw new CustomizedException("错误的参数");
+                    throw new ProcessedException("错误的参数");
                 }
             }
 

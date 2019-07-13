@@ -1,10 +1,10 @@
 package io.geewit.data.jpa.essential.search;
 
-import io.geewit.core.exception.CustomizedException;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import io.geewit.core.exception.ProcessedException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collection;
@@ -91,7 +91,7 @@ public class SearchFilter {
                         break;
                     }
                     default:{
-                        throw new CustomizedException("错误的参数");
+                        throw new ProcessedException("错误的参数");
                     }
                 }
                 betweens.put(fieldName, fieldArray);
