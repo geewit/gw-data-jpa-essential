@@ -5,7 +5,7 @@ dependencies {
     compileOnly("javax.servlet:javax.servlet-api:$javax_servlet_api_version")
     compile("io.geewit.core:gw-core-exception:$gw_core_exception_version")
     compile("io.geewit.core:gw-core-jackson:$gw_core_jackson_version")
-    compile("io.geewit.core:gw-core-utils:$gw_core_utils_version")
+//    compile("io.geewit.core:gw-core-utils:$gw_core_utils_version")
 //    compileOnly("org.hibernate:hibernate-envers:$hibernate_version")
     compile("org.hibernate.javax.persistence:hibernate-jpa-2.1-api:1.0.0.Final")
     compile("org.hibernate:hibernate-core:$hibernate_version") {
