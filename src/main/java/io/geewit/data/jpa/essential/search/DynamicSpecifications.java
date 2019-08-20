@@ -1,6 +1,5 @@
 package io.geewit.data.jpa.essential.search;
 
-import io.geewit.core.exception.CustomizedException;
 import com.google.common.collect.Lists;
 import io.geewit.core.exception.ProcessedException;
 import org.apache.commons.lang3.StringUtils;

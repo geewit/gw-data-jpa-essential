@@ -1,12 +1,12 @@
 package io.geewit.data.jpa.essential.domain;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.domain.Sort.Order;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -45,7 +45,7 @@ public class SortFactory {
         if(sortPropterty != null) {
             orderList.add(new Order(direction != null ? direction : defaultDirection, sortPropterty));
         }
-        return CollectionUtils.isEmpty(orderList) ? null : Sort.by(orderList);
+        return orderList.isEmpty() ? null : Sort.by(orderList);
     }
 
     public static Sort create(Sort sort, String sortPropterty) {

@@ -1,6 +1,6 @@
 package io.geewit.data.jpa.essential.id;
 
-import io.geewit.core.utils.UUID;
+import io.geewit.utils.uuid.UUID;
 import org.hibernate.HibernateException;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.id.IdentifierGenerator;
