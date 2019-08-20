@@ -10,7 +10,7 @@ dependencies {
     compile("io.geewit.utils.core:gw-core-uuid-utils:$gw_utils_version")
     compile("com.google.guava:guava:$guava_version")
 //    compileOnly("org.hibernate:hibernate-envers:$hibernate_version")
-    compile("org.hibernate.javax.persistence:hibernate-jpa-2.1-api:1.0.0.Final")
+    compile("org.hibernate.javax.persistence:hibernate-jpa-2.1-api:1.0.2.Final")
     compile("org.hibernate:hibernate-core:$hibernate_version") {
         exclude group: 'dom4j', module: 'dom4j'
     }
