@@ -2,9 +2,7 @@ package io.geewit.data.jpa.essential.search;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import io.geewit.core.exception.ProcessedException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collection;
@@ -13,9 +11,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 /**
- 构造｛@link org.springframework.data.jpa.domain.Specification｝的工具类
- @author geewit
- @since  2015-05-18
+ * 构造｛@link org.springframework.data.jpa.domain.Specification｝的工具类
+ *
+ * @author geewit
+ * @since 2015-05-18
  */
 public class SearchFilter {
 
@@ -24,13 +23,13 @@ public class SearchFilter {
         this.operator = operator;
     }
 
-    private SearchFilter(String fieldName, Operator operator, Object value) {
+    SearchFilter(String fieldName, Operator operator, Object value) {
         this.fieldName = fieldName;
         this.operator = operator;
         this.values = new Object[]{value};
     }
 
-    private SearchFilter(String fieldName, Operator operator, Object[] values) {
+    SearchFilter(String fieldName, Operator operator, Object[] values) {
         this.fieldName = fieldName;
         this.operator = operator;
         this.values = values;
@@ -55,75 +54,52 @@ public class SearchFilter {
         return new SearchFilter(fieldName, operator, values);
     }
 
+
+    /**
+     * 解析输入查询语句
+     * @param searchParams
+     * @return
+     */
     @SuppressWarnings({"unused"})
     public static Collection<SearchFilter> parse(Map<String, Object> searchParams) {
         Set<SearchFilter> filters = Sets.newHashSet();
-        Map<String, Object[]> betweens = null;
         SearchFilter filter;
-        for(Entry<String, Object> entry : searchParams.entrySet()) {
+        for (Entry<String, Object> entry : searchParams.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
             String[] names = StringUtils.split(key, "_");
-            if(names.length != 2 && names.length != 3) {
+            if (names.length != 2) {
                 continue;
             }
             String fieldName = names[1];
             Operator operator = Operator.valueOf(names[0].toUpperCase());
-            if(Operator.BETWEEN.equals(operator)) {
-                if(names.length != 3) {
-                    continue;
-                }
-                if(betweens == null) {
-                    betweens = Maps.newHashMap();
-                }
-                BetweenType betweenType = BetweenType.valueOf(names[2].toUpperCase());
-                Object[] fieldArray = betweens.get(fieldName);
-                if(fieldArray == null) {
-                    fieldArray = new Object[]{null, null};
-                }
-                switch (betweenType) {
-                    case LOW: {
-                        fieldArray[0] = value;
-                        break;
-                    }
-                    case HIGH: {
-                        fieldArray[1] = value;
-                        break;
-                    }
-                    default:{
-                        throw new ProcessedException("错误的参数");
-                    }
-                }
-                betweens.put(fieldName, fieldArray);
+            if (Operator.BETWEEN.equals(operator)) {
+                String[] fieldArray = StringUtils.split(value.toString(), ",", 2);
+                filter = new SearchFilter(fieldName, operator, fieldArray);
             } else {
-                filter = new SearchFilter(fieldName, operator, value);
-                filters.add(filter);
+                filter = new SearchFilter(fieldName, operator, value.toString());
             }
-        }
-        if(betweens != null && !betweens.isEmpty()) {
-            for(Entry<String, Object[]> entry : betweens.entrySet()) {
-                filter = new SearchFilter(entry.getKey(), Operator.BETWEEN, entry.getValue());
-                filters.add(filter);
-            }
+            filters.add(filter);
         }
         return filters;
     }
 
     /**
      * 增加filter
+     *
      * @param filters
      * @param filter
      */
     @SuppressWarnings({"unused"})
     public static void addFilter(Collection<SearchFilter> filters, SearchFilter filter) {
         boolean notExist = true;
-        for(SearchFilter existFilter : filters) {
-            if(existFilter.fieldName.equals(filter.fieldName)) {
+        for (SearchFilter existFilter : filters) {
+            if (existFilter.fieldName.equals(filter.fieldName)) {
                 notExist = false;
                 break;
             }
         }
-        if(notExist) {
+        if (notExist) {
             filters.add(filter);
         }
     }
@@ -131,13 +107,14 @@ public class SearchFilter {
 
     /**
      * 是否存在filter
+     *
      * @param filters
      * @param fieldName
      */
     @SuppressWarnings({"unused"})
     public static boolean exists(Collection<SearchFilter> filters, String fieldName) {
-        for(SearchFilter existFilter : filters) {
-            if(existFilter.fieldName.equals(fieldName)) {
+        for (SearchFilter existFilter : filters) {
+            if (existFilter.fieldName.equals(fieldName)) {
                 return true;
             }
         }

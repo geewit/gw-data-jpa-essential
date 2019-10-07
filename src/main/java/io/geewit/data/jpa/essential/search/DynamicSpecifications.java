@@ -7,18 +7,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
 
-import javax.persistence.criteria.*;
+import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Predicate;
 import java.text.ParseException;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
- 构造 {@link org.springframework.data.jpa.domain.Specification} 的工具类
- @author geewit
- @since  2015-05-18
+ * 构造 {@link org.springframework.data.jpa.domain.Specification} 的工具类
+ *
+ * @author geewit
+ * @since 2015-05-18
  */
 @SuppressWarnings({"unchecked", "unused"})
 public class DynamicSpecifications {
@@ -26,44 +25,45 @@ public class DynamicSpecifications {
 
     /**
      * 从 {@link SearchFilter} 构造 {@link org.springframework.data.jpa.domain.Specification}
-     * @param  filters {@link SearchFilter}
+     *
+     * @param filters {@link SearchFilter}
      * @return {@link org.springframework.data.jpa.domain.Specification}
      */
-    public static <T>Specification<T> bySearchFilter(final Collection<SearchFilter> filters) {
+    public static <T> Specification<T> bySearchFilter(final Collection<SearchFilter> filters) {
         return (root, criteriaQuery, criteriaBuilder) -> {
-            if(filters != null && !filters.isEmpty()) {
+            if (filters != null && !filters.isEmpty()) {
                 logger.debug("filters != null");
                 List<Predicate> predicates = Lists.newArrayList();
-                for(SearchFilter filter : filters) {
-                    if(logger.isDebugEnabled()) {
+                for (SearchFilter filter : filters) {
+                    if (logger.isDebugEnabled()) {
                         logger.debug("filter.fieldName = " + filter.fieldName());
                         logger.debug("filter.values = " + StringUtils.join(filter.values(), ","));
                         logger.debug("filter.operator = " + filter.operator());
                         logger.debug("root.model = " + root.getModel().getName());
                     }
                     Path path;
-                    if(StringUtils.contains(filter.fieldName(), '$')) {
+                    if (StringUtils.contains(filter.fieldName(), '$')) {
                         String[] fields = StringUtils.split(filter.fieldName(), '$');
                         path = root.<String>get(fields[0]);
                         for (int i = 1; i < fields.length; i++) {
                             path = path.get(fields[i]);
-                            if(path == null) {
+                            if (path == null) {
                                 break;
                             }
                         }
                     } else {
                         path = root.<String>get(filter.fieldName());
                     }
-                    if(path == null) {
+                    if (path == null) {
                         break;
                     }
 
                     switch (filter.operator()) {
                         case EQ: {
                             logger.debug("case EQ");
-                            if(filter.values() != null && filter.values().length > 0) {
-                                Object value = parseValue(path, filter.values()[0], false, null);
-                                if(value != null) {
+                            if (filter.values() != null && filter.values().length > 0) {
+                                Object value = parseValue(path, filter.values()[0]);
+                                if (value != null) {
                                     predicates.add(criteriaBuilder.equal(path, value));
                                 }
                             }
@@ -71,9 +71,9 @@ public class DynamicSpecifications {
                         }
                         case NE: {
                             logger.debug("case NE");
-                            if(filter.values() != null && filter.values().length > 0) {
-                                Object value = parseValue(path, filter.values()[0], false, null);
-                                if(value != null) {
+                            if (filter.values() != null && filter.values().length > 0) {
+                                Object value = parseValue(path, filter.values()[0]);
+                                if (value != null) {
                                     predicates.add(criteriaBuilder.notEqual(path, value));
                                 }
                             }
@@ -81,107 +81,118 @@ public class DynamicSpecifications {
                         }
                         case LIKE: {
                             logger.debug("case LIKE");
-                            if(filter.values() != null && filter.values().length > 0) {
-                                if(StringUtils.isNotEmpty(filter.values()[0].toString())) {
-                                    predicates.add(criteriaBuilder.like(path, "%" + filter.values()[0].toString() + "%"));
+                            if (filter.values() != null && filter.values().length > 0) {
+                                String like;
+                                if (filter.values()[0] instanceof String) {
+                                    like = (String) filter.values()[0];
+                                } else {
+                                    like = filter.values()[0].toString();
+                                }
+                                if (StringUtils.isNotEmpty(like)) {
+                                    predicates.add(criteriaBuilder.like(path, "%" + like + "%"));
                                 }
                             }
                             break;
                         }
                         case LLIKE: {
                             logger.debug("case LLIKE");
-                            if(filter.values() != null && filter.values().length > 0) {
-                                if(StringUtils.isNotEmpty(filter.values()[0].toString())) {
-                                    predicates.add(criteriaBuilder.like(path, "%" + filter.values()[0].toString()));
+                            if (filter.values() != null && filter.values().length > 0) {
+                                String like;
+                                if (filter.values()[0] instanceof String) {
+                                    like = (String) filter.values()[0];
+                                } else {
+                                    like = filter.values()[0].toString();
+                                }
+                                if (StringUtils.isNotEmpty(like)) {
+                                    predicates.add(criteriaBuilder.like(path, "%" + like));
                                 }
                             }
                             break;
                         }
                         case RLIKE: {
                             logger.debug("case RLIKE");
-                            if(filter.values() != null && filter.values().length > 0) {
-                                if(StringUtils.isNotEmpty(filter.values()[0].toString())) {
-                                    predicates.add(criteriaBuilder.like(path, filter.values()[0].toString() + "%"));
+                            if (filter.values() != null && filter.values().length > 0) {
+                                String like;
+                                if (filter.values()[0] instanceof String) {
+                                    like = (String) filter.values()[0];
+                                } else {
+                                    like = filter.values()[0].toString();
+                                }
+                                if (StringUtils.isNotEmpty(like)) {
+                                    predicates.add(criteriaBuilder.like(path, like + "%"));
                                 }
                             }
                             break;
                         }
                         case GT: {
                             logger.debug("case GT");
-                            if(filter.values() != null && filter.values().length > 0) {
-                                Object value = parseValue(path, filter.values()[0], true, null);
-                                if(value instanceof Comparable) {
-                                    if(StringUtils.isNotEmpty(filter.values()[0].toString())) {
-                                        predicates.add(criteriaBuilder.greaterThan(path, (Comparable) value));
-                                    }
+                            if (filter.values() != null && filter.values().length > 0) {
+                                Object value = parseValue(path, filter.values()[0]);
+                                if (value instanceof Comparable) {
+                                    predicates.add(criteriaBuilder.greaterThan(path, (Comparable) value));
                                 }
                             }
                             break;
                         }
                         case GTE: {
                             logger.debug("case GTE");
-                            if(filter.values() != null && filter.values().length > 0) {
-                                Object value = parseValue(path, filter.values()[0], true, null);
-                                if(value instanceof Comparable) {
-                                    if(StringUtils.isNotEmpty(filter.values()[0].toString())) {
-                                        predicates.add(criteriaBuilder.greaterThanOrEqualTo(path, (Comparable) value));
-                                    }
+                            if (filter.values() != null && filter.values().length > 0) {
+                                Object value = parseValue(path, filter.values()[0]);
+                                if (value instanceof Comparable) {
+                                    predicates.add(criteriaBuilder.greaterThanOrEqualTo(path, (Comparable) value));
                                 }
                             }
                             break;
                         }
                         case LT: {
                             logger.debug("case LT");
-                            if(filter.values() != null && filter.values().length > 0) {
-                                Object value = parseValue(path, filter.values()[0], true, null);
-                                if(value instanceof Comparable) {
-                                    if(StringUtils.isNotEmpty(filter.values()[0].toString())) {
-                                        predicates.add(criteriaBuilder.lessThan(path, (Comparable) value));
-                                    }
+                            if (filter.values() != null && filter.values().length > 0) {
+                                Object value = parseValue(path, filter.values()[0]);
+                                if (value instanceof Comparable) {
+                                    predicates.add(criteriaBuilder.lessThan(path, (Comparable) value));
                                 }
                             }
                             break;
                         }
                         case LTE: {
                             logger.debug("case LTE");
-                            if(filter.values() != null && filter.values().length > 0) {
-                                Object value = parseValue(path, filter.values()[0], true, null);
-                                if(value instanceof Comparable) {
-                                    if(StringUtils.isNotEmpty(filter.values()[0].toString())) {
-                                        predicates.add(criteriaBuilder.lessThanOrEqualTo(path, (Comparable) value));
-                                    }
+                            if (filter.values() != null && filter.values().length > 0) {
+                                Object value = parseValue(path, filter.values()[0]);
+                                if (value instanceof Comparable) {
+                                    predicates.add(criteriaBuilder.lessThanOrEqualTo(path, (Comparable) value));
                                 }
                             }
                             break;
                         }
                         case BETWEEN: {
                             logger.debug("case BETWEEN");
-                            if(filter.values().length == 2) {
-                                Object value1 = parseValue(path, filter.values()[0], true, BetweenType.LOW);
-                                Object value2 = parseValue(path, filter.values()[1], true, BetweenType.HIGH);
-                                if(value1 != null && value2 != null) {
-                                    if(value1 instanceof Comparable && value2 instanceof Comparable) {
-                                        predicates.add(criteriaBuilder.between(path, ((Comparable)value1), ((Comparable)value2)));
+                            if (filter.values().length == 2) {
+                                Object[] values = parseValues(path, filter.operator(), filter.values());
+                                if (values != null && values.length == 2) {
+                                    if (values[0] != null && values[1] != null) {
+                                        predicates.add(criteriaBuilder.between(path, ((Comparable) values[0]), ((Comparable) values[1])));
+                                    } else if (values[0] != null) {
+                                        predicates.add(criteriaBuilder.greaterThanOrEqualTo(path, ((Comparable) values[0])));
+                                    } else if (values[1] != null) {
+                                        predicates.add(criteriaBuilder.lessThanOrEqualTo(path, ((Comparable) values[1])));
                                     }
-                                } else if(value1 != null) {
-                                    predicates.add(criteriaBuilder.greaterThanOrEqualTo(path, ((Comparable)value1)));
-                                } else if(value2 != null) {
-                                    predicates.add(criteriaBuilder.lessThanOrEqualTo(path, ((Comparable)value2)));
                                 }
                             }
                             break;
                         }
                         case IN: {
                             logger.debug("case IN");
-                            if(filter.values() != null && filter.values().length > 0) {
-                                predicates.add(path.in((Object[]) StringUtils.split(filter.values()[0].toString(), ',')));
+                            if (filter.values() != null && filter.values().length > 0) {
+                                Object[] values = parseValues(path, filter.operator(), filter.values());
+                                predicates.add(path.in(values));
                             }
                             break;
                         }
                         case NOTIN: {
                             logger.debug("case NOTIN");
-                            if(filter.values() != null && filter.values().length > 0) {
-                                predicates.add(criteriaBuilder.not(path.in((Object[]) StringUtils.split(filter.values()[0].toString(), ','))));
+                            if (filter.values() != null && filter.values().length > 0) {
+                                Object[] values = parseValues(path, filter.operator(), filter.values());
+                                predicates.add(criteriaBuilder.not(path.in(values)));
                             }
                             break;
                         }
@@ -190,7 +201,7 @@ public class DynamicSpecifications {
                             predicates.add(criteriaBuilder.isNull(path));
                             break;
                         }
-                        case ISNOTNULL : {
+                        case ISNOTNULL: {
                             logger.debug("case IS NOT NULL");
                             predicates.add(criteriaBuilder.isNotNull(path));
                             break;
@@ -201,7 +212,7 @@ public class DynamicSpecifications {
                     }
                 }
 
-                if(!predicates.isEmpty()) {
+                if (!predicates.isEmpty()) {
                     return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
                 }
             } else {
@@ -214,141 +225,174 @@ public class DynamicSpecifications {
 
     /**
      * 合并多个 {@link org.springframework.data.jpa.domain.Specification}
+     *
      * @param firstSpecification 第一个{@link org.springframework.data.jpa.domain.Specification}
-     * @param specifications 需要合并的{@link org.springframework.data.jpa.domain.Specification}
+     * @param specifications     需要合并的{@link org.springframework.data.jpa.domain.Specification}
      * @return {@link org.springframework.data.jpa.domain.Specification}
      */
-    public static <T>Specification<T> mergeSpecification(Specification<T> firstSpecification, Specification<T>... specifications) {
+    public static <T> Specification<T> mergeSpecification(Specification<T> firstSpecification, Specification<T>... specifications) {
         return (root, criteriaQuery, criteriaBuilder) -> {
             List<Predicate> predicates = Lists.newArrayList(firstSpecification.toPredicate(root, criteriaQuery, criteriaBuilder));
-            if(specifications != null) {
-                for(Specification<T> specification : specifications) {
+            if (specifications != null) {
+                for (Specification<T> specification : specifications) {
                     predicates.add(specification.toPredicate(root, criteriaQuery, criteriaBuilder));
                 }
             }
-            if(!predicates.isEmpty()) {
+            if (!predicates.isEmpty()) {
                 return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
             }
             return criteriaBuilder.conjunction();
         };
     }
 
-    private static Object parseValue(Class pathClass, Object objValue, boolean needComparable, BetweenType betweenType) {
-        if(pathClass == null || objValue == null) {
+
+    private static Object parseValue(Class pathClass, Object value) {
+        if (pathClass == null || value == null) {
             return null;
         }
-        if(String.class.isAssignableFrom(pathClass)) {
-            return objValue;
-        } else if(pathClass.isEnum()) {
-            logger.debug("path is enum");
-            if(objValue instanceof Enum) {
-                return objValue;
+        if (String.class.isAssignableFrom(pathClass)) {
+            if (value instanceof String) {
+                return value;
             } else {
-                String strValue = objValue.toString();
-                try {
-                    return Enum.valueOf(pathClass, strValue);
-                } catch (IllegalArgumentException e) {
-                    logger.warn(e.getMessage());
-                    return null;
-                }
+                return value.toString();
             }
-        } else if(Date.class.isAssignableFrom(pathClass)) {
-            String strValue = objValue.toString();
+        } else if (pathClass.isEnum()) {
+            logger.debug("path is enum");
             try {
-                if(betweenType != null) {
-                    switch (betweenType) {
-                        case LOW: {
-                            return fromDate(strValue);
-                        }
-                        case HIGH: {
-                            return toDate(strValue);
-                        }
-                        default: {
-                            throw new ProcessedException("错误的参数");
-                        }
-                    }
+                if (value.getClass().isAssignableFrom(pathClass)) {
+                    return value;
                 } else {
-                    return date(strValue);
+                    return Enum.valueOf(pathClass, value.toString());
                 }
-            } catch (ParseException e) {
-                logger.warn(e.getMessage(), e);
+            } catch (IllegalArgumentException e) {
+                logger.warn(e.getMessage());
                 return null;
             }
-        } else if(Number.class.isAssignableFrom(pathClass)) {
-            String strValue = objValue.toString();
-            return org.springframework.util.NumberUtils.parseNumber(strValue, pathClass);
+        } else if (Date.class.isAssignableFrom(pathClass)) {
+            if (value.getClass().isAssignableFrom(pathClass)) {
+                return value;
+            } else {
+                return date(value.toString());
+            }
+        } else if (Number.class.isAssignableFrom(pathClass)) {
+            if (value.getClass().isAssignableFrom(pathClass)) {
+                return value;
+            } else {
+                if (value instanceof String) {
+                    return org.springframework.util.NumberUtils.parseNumber((String) value, pathClass);
+                } else {
+                    return org.springframework.util.NumberUtils.parseNumber(value.toString(), pathClass);
+                }
+            }
+
         }
-        if(needComparable && !Comparable.class.isAssignableFrom(pathClass)) {
-            return null;
-        }
-        return objValue;
+        return value;
     }
 
-    private static Object parseValue(Path path, Object objValue, boolean needComparable, BetweenType betweenType) {
-        if(path == null || objValue == null) {
+    private static Object parseValue(Path path, Object value) {
+        if (path == null || value == null) {
             return null;
         }
         Class pathClass = path.getJavaType();
 
-        return parseValue(pathClass, objValue, needComparable, betweenType);
+        return parseValue(pathClass, value);
+    }
+
+    private static Object[] parseValues(Class pathClass, Operator operator, Object... values) {
+        if (Operator.BETWEEN.equals(operator)) {
+            if (values.length != 2 || !Comparable.class.isAssignableFrom(pathClass)) {
+                return null;
+            }
+            Arrays.sort(values);
+            if (Date.class.isAssignableFrom(pathClass)) {
+                Date fromDate;
+                if (values[0].getClass().isAssignableFrom(pathClass)) {
+                    fromDate = (Date) values[0];
+                } else {
+                    if (values[0] instanceof String) {
+                        fromDate = fromDate((String) values[0]);
+                    } else {
+                        fromDate = fromDate(values[0].toString());
+                    }
+                }
+                Date toDate;
+                if (values[1].getClass().isAssignableFrom(pathClass)) {
+                    toDate = (Date) values[1];
+                } else {
+                    if (values[1] instanceof String) {
+                        toDate = toDate((String) values[1]);
+                    } else {
+                        toDate = toDate(values[1].toString());
+                    }
+                }
+                return new Date[]{fromDate, toDate};
+            }
+        }
+        return Arrays.stream(values).map(value -> parseValue(pathClass, value)).toArray(Object[]::new);
+    }
+
+    private static Object[] parseValues(Path path, Operator operator, Object... values) {
+        return parseValues(path.getJavaType(), operator, values);
     }
 
     private static final String[] PATTERNS = {"yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd", "HH:mm:ss"};
 
-    private static Date date(String date) throws ParseException {
-        return org.apache.commons.lang3.time.DateUtils.parseDateStrictly(date, PATTERNS);
-    }
-
-    private static Date betweenDate(String date, BetweenType betweenType) throws ParseException {
-        Date fromDate;
-        if (Pattern.matches("\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}", date)) {
-            return date(date);
-        } else if (Pattern.matches("\\d{4}-\\d{2}-\\d{2}", date)) {
-            fromDate = date(date);
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTime(fromDate);
-            switch (betweenType) {
-                case LOW: {
-                    calendar.set(Calendar.HOUR_OF_DAY, 0);
-                    calendar.set(Calendar.MINUTE, 0);
-                    calendar.set(Calendar.SECOND, 0);
-                    calendar.set(Calendar.MILLISECOND, 0);
-                    break;
-                }
-                case HIGH: {
-                    calendar.set(Calendar.HOUR_OF_DAY, 23);
-                    calendar.set(Calendar.MINUTE, 59);
-                    calendar.set(Calendar.SECOND, 59);
-                    calendar.set(Calendar.MILLISECOND, 999);
-                    break;
-                }
-                default: {
-                    throw new ProcessedException("错误的参数");
-                }
-            }
-
-            return calendar.getTime();
+    private static Date date(String date) {
+        try {
+            return org.apache.commons.lang3.time.DateUtils.parseDateStrictly(date, PATTERNS);
+        } catch (ParseException e) {
+            return null;
         }
-
-        return null;
     }
 
     /**
      * 转换 {@link String} 类型的date为 {@link Date}类型 时分秒为00:00:00
      *
-     * @param date {@link java.util.Date} 类型
+     * @param value {@link java.util.Date} 类型
      */
-    private static Date fromDate(String date) throws ParseException {
-        return betweenDate(date, BetweenType.LOW);
+    private static Date fromDate(String value) {
+        if (Pattern.matches("\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}", value)) {
+            return date(value);
+        } else if (Pattern.matches("\\d{4}-\\d{2}-\\d{2}", value)) {
+            Calendar calendar = Calendar.getInstance();
+            Date date = date(value);
+            if (date == null) {
+                return null;
+            }
+            calendar.setTime(date);
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
+            return calendar.getTime();
+        } else {
+            return null;
+        }
     }
 
     /**
      * 转换 {@link String} 类型的date为 {@link Date}类型 时分秒为23:59:59
      *
-     * @param date {@link java.util.Date} 类型
+     * @param value {@link java.util.Date} 类型
      */
-    private static Date toDate(String date) throws ParseException {
-        return betweenDate(date, BetweenType.HIGH);
+    private static Date toDate(String value) {
+        if (Pattern.matches("\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}", value)) {
+            return date(value);
+        } else if (Pattern.matches("\\d{4}-\\d{2}-\\d{2}", value)) {
+            Calendar calendar = Calendar.getInstance();
+            Date date = date(value);
+            if (date == null) {
+                return null;
+            }
+            calendar.setTime(date);
+            calendar.set(Calendar.HOUR_OF_DAY, 23);
+            calendar.set(Calendar.MINUTE, 59);
+            calendar.set(Calendar.SECOND, 59);
+            calendar.set(Calendar.MILLISECOND, 999);
+            return calendar.getTime();
+        } else {
+            return null;
+        }
     }
 }
 
