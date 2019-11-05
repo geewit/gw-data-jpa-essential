@@ -24,7 +24,7 @@ public class SortFactory {
         if(sortProperty == null) {
             return null;
         }
-        return new Sort(direction, sortProperty);
+        return Sort.by(direction, sortProperty);
     }
 
     public static Sort create(String sortProperty, String order) {
@@ -32,7 +32,7 @@ public class SortFactory {
             return null;
         }
         Direction direction = (StringUtils.isNotBlank(order) && Direction.DESC.name().equalsIgnoreCase(order)) ? Direction.DESC : Direction.ASC;
-        return new Sort(direction, sortProperty);
+        return Sort.by(direction, sortProperty);
     }
 
     public static Sort create(Sort sort, String sortPropterty, Direction direction) {
