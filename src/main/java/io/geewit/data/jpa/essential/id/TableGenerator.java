@@ -5,11 +5,11 @@ import org.hibernate.LockMode;
 import org.hibernate.LockOptions;
 import org.hibernate.MappingException;
 import org.hibernate.boot.model.naming.Identifier;
-import org.hibernate.boot.model.relational.Database;
-import org.hibernate.boot.model.relational.Namespace;
-import org.hibernate.boot.model.relational.QualifiedName;
-import org.hibernate.boot.model.relational.QualifiedNameParser;
+import org.hibernate.boot.model.relational.*;
+import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.dialect.Dialect;
+import org.hibernate.engine.config.spi.ConfigurationService;
+import org.hibernate.engine.config.spi.StandardConverters;
 import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
 import org.hibernate.engine.jdbc.internal.FormatStyle;
 import org.hibernate.engine.jdbc.spi.JdbcServices;
@@ -39,12 +39,84 @@ import java.util.Properties;
 
 /**
  * {@link org.hibernate.id.enhanced.TableGenerator}
+ *
  * @author geewit
+ * An enhanced version of table-based id generation.
+ * <p/>
+ * Unlike the simplistic legacy one (which, btw, was only ever intended for subclassing
+ * support) we "segment" the table into multiple values.  Thus a single table can
+ * actually serve as the persistent storage for multiple independent generators.  One
+ * approach would be to segment the values by the name of the entity for which we are
+ * performing generation, which would mean that we would have a row in the generator
+ * table for each entity name.  Or any configuration really; the setup is very flexible.
+ * <p/>
+ * In this respect it is very similar to the legacy
+ * {@link org.hibernate.id.MultipleHiLoPerTableGenerator} in terms of the
+ * underlying storage structure (namely a single table capable of holding
+ * multiple generator values).  The differentiator is, as with
+ * {@link SequenceStyleGenerator} as well, the externalized notion
+ * of an optimizer.
+ * <p/>
+ * <b>NOTE</b> that by default we use a single row for all generators (based
+ * on {@link #DEF_SEGMENT_VALUE}).  The configuration parameter
+ * {@link #CONFIG_PREFER_SEGMENT_PER_ENTITY} can be used to change that to
+ * instead default to using a row for each entity name.
+ * <p/>
+ * Configuration parameters:
+ * <table>
+ * 	 <tr>
+ *     <td><b>NAME</b></td>
+ *     <td><b>DEFAULT</b></td>
+ *     <td><b>DESCRIPTION</b></td>
+ *   </tr>
+ *   <tr>
+ *     <td>{@link #TABLE_PARAM}</td>
+ *     <td>{@link #DEF_TABLE}</td>
+ *     <td>The name of the table to use to store/retrieve values</td>
+ *   </tr>
+ *   <tr>
+ *     <td>{@link #VALUE_COLUMN_PARAM}</td>
+ *     <td>{@link #DEF_VALUE_COLUMN}</td>
+ *     <td>The name of column which holds the sequence value for the given segment</td>
+ *   </tr>
+ *   <tr>
+ *     <td>{@link #SEGMENT_COLUMN_PARAM}</td>
+ *     <td>{@link #DEF_SEGMENT_COLUMN}</td>
+ *     <td>The name of the column which holds the segment key</td>
+ *   </tr>
+ *   <tr>
+ *     <td>{@link #SEGMENT_VALUE_PARAM}</td>
+ *     <td>{@link #DEF_SEGMENT_VALUE}</td>
+ *     <td>The value indicating which segment is used by this generator; refers to values in the {@link #SEGMENT_COLUMN_PARAM} column</td>
+ *   </tr>
+ *   <tr>
+ *     <td>{@link #SEGMENT_LENGTH_PARAM}</td>
+ *     <td>{@link #DEF_SEGMENT_LENGTH}</td>
+ *     <td>The data length of the {@link #SEGMENT_COLUMN_PARAM} column; used for schema creation</td>
+ *   </tr>
+ *   <tr>
+ *     <td>{@link #INITIAL_PARAM}</td>
+ *     <td>{@link #DEFAULT_INITIAL_VALUE}</td>
+ *     <td>The initial value to be stored for the given segment</td>
+ *   </tr>
+ *   <tr>
+ *     <td>{@link #INCREMENT_PARAM}</td>
+ *     <td>{@link #DEFAULT_INCREMENT_SIZE}</td>
+ *     <td>The increment size for the underlying segment; see the discussion on {@link Optimizer} for more details.</td>
+ *   </tr>
+ *   <tr>
+ *     <td>{@link #OPT_PARAM}</td>
+ *     <td><i>depends on defined increment size</i></td>
+ *     <td>Allows explicit definition of which optimization strategy to use</td>
+ *   </tr>
+ * </table>
+ *
+ * @author Steve Ebersole
  */
 public class TableGenerator implements PersistentIdentifierGenerator, Configurable {
     private static final CoreMessageLogger LOG = Logger.getMessageLogger(
             CoreMessageLogger.class,
-            TableGenerator.class.getName()
+            org.hibernate.id.enhanced.TableGenerator.class.getName()
     );
 
     /**
@@ -61,6 +133,7 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
     /**
      * The default {@link #TABLE_PARAM} value
      */
+    @SuppressWarnings("WeakerAccess")
     public static final String DEF_TABLE = "hibernate_sequences";
 
     /**
@@ -94,17 +167,20 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
     /**
      * The default {@link #SEGMENT_VALUE_PARAM} value, unless {@link #CONFIG_PREFER_SEGMENT_PER_ENTITY} is specified
      */
+    @SuppressWarnings("WeakerAccess")
     public static final String DEF_SEGMENT_VALUE = "default";
 
     /**
      * Indicates the length of the column defined by {@link #SEGMENT_COLUMN_PARAM}.  Used in schema export.  The
      * default value is {@link #DEF_SEGMENT_LENGTH}
      */
+    @SuppressWarnings("WeakerAccess")
     public static final String SEGMENT_LENGTH_PARAM = "segment_value_length";
 
     /**
      * The default {@link #SEGMENT_LENGTH_PARAM} value
      */
+    @SuppressWarnings("WeakerAccess")
     public static final int DEF_SEGMENT_LENGTH = 255;
 
     /**
@@ -115,6 +191,7 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
     /**
      * The default {@link #INITIAL_PARAM} value
      */
+    @SuppressWarnings("WeakerAccess")
     public static final int DEFAULT_INITIAL_VALUE = 1;
 
     /**
@@ -125,6 +202,7 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
     /**
      * The default {@link #INCREMENT_PARAM} value
      */
+    @SuppressWarnings("WeakerAccess")
     public static final int DEFAULT_INCREMENT_SIZE = 1;
 
     /**
@@ -132,6 +210,8 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
      * a {@link StandardOptimizerDescriptor} by name
      */
     public static final String OPT_PARAM = "optimizer";
+
+    protected boolean storeLastUsedValue;
 
 
     protected Type identifierType;
@@ -164,7 +244,6 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
      *
      * @return The identifier type mapping.
      */
-    @SuppressWarnings({"unused"})
     public final Type getIdentifierType() {
         return identifierType;
     }
@@ -174,7 +253,6 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
      *
      * @return The table name.
      */
-    @SuppressWarnings({"unused"})
     public final String getTableName() {
         return qualifiedTableName.render();
     }
@@ -185,7 +263,6 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
      *
      * @return The segment column name
      */
-    @SuppressWarnings({"unused"})
     public final String getSegmentColumnName() {
         return segmentColumnName;
     }
@@ -197,7 +274,6 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
      *
      * @return The segment value for this generator instance.
      */
-    @SuppressWarnings({"unused"})
     public final String getSegmentValue() {
         return segmentValue;
     }
@@ -205,12 +281,13 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
     /**
      * The size of the {@link #getSegmentColumnName segment column} in the
      * underlying table.
+     * <p/>
      * <b>NOTE</b> : should really have been called 'segmentColumnLength' or
      * even better 'segmentColumnSize'
      *
      * @return the column size.
      */
-    @SuppressWarnings("UnusedDeclaration")
+    @SuppressWarnings({"UnusedDeclaration", "WeakerAccess"})
     public final int getSegmentValueLength() {
         return segmentValueLength;
     }
@@ -220,7 +297,6 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
      *
      * @return The name of the value column.
      */
-    @SuppressWarnings({"unused"})
     public final String getValueColumnName() {
         return valueColumnName;
     }
@@ -231,7 +307,6 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
      *
      * @return The initial value to use.
      */
-    @SuppressWarnings({"unused"})
     public final int getInitialValue() {
         return initialValue;
     }
@@ -242,7 +317,6 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
      *
      * @return The increment amount.
      */
-    @SuppressWarnings({"unused"})
     public final int getIncrementSize() {
         return incrementSize;
     }
@@ -252,7 +326,6 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
      *
      * @return Out optimizer.
      */
-    @SuppressWarnings({"unused"})
     public final Optimizer getOptimizer() {
         return optimizer;
     }
@@ -263,18 +336,19 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
      *
      * @return Value for property 'tableAccessCount'.
      */
-    @SuppressWarnings({"unused"})
     public final long getTableAccessCount() {
         return accessCount;
     }
 
     @Override
     public void configure(Type type, Properties params, ServiceRegistry serviceRegistry) throws MappingException {
+        storeLastUsedValue = serviceRegistry.getService(ConfigurationService.class)
+                .getSetting(AvailableSettings.TABLE_GENERATOR_STORE_LAST_USED, StandardConverters.BOOLEAN, true);
         identifierType = type;
 
         final JdbcEnvironment jdbcEnvironment = serviceRegistry.getService(JdbcEnvironment.class);
 
-        qualifiedTableName = determineGeneratorTableName(params, jdbcEnvironment);
+        qualifiedTableName = determineGeneratorTableName(params, jdbcEnvironment, serviceRegistry);
         segmentColumnName = determineSegmentColumnName(params, jdbcEnvironment);
         valueColumnName = determineValueColumnName(params, jdbcEnvironment);
 
@@ -289,26 +363,41 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
                 params,
                 OptimizerFactory.determineImplicitOptimizerName(incrementSize, params)
         );
+        int optimizerInitialValue = ConfigurationHelper.getInt(INITIAL_PARAM, params, -1);
         optimizer = OptimizerFactory.buildOptimizer(
                 optimizationStrategy,
                 identifierType.getReturnedClass(),
                 incrementSize,
-                ConfigurationHelper.getInt(INITIAL_PARAM, params, -1)
+                optimizerInitialValue
         );
     }
 
     /**
      * Determine the table name to use for the generator values.
+     * <p/>
      * Called during {@link #configure configuration}.
      *
-     * @param params          The params supplied in the generator config (plus some standard useful extras).
+     * @see #getTableName()
+     * @param params The params supplied in the generator config (plus some standard useful extras).
      * @param jdbcEnvironment The JDBC environment
      * @return The table name to use.
-     * @see #getTableName()
      */
-    @SuppressWarnings("UnusedParameters")
-    protected QualifiedName determineGeneratorTableName(Properties params, JdbcEnvironment jdbcEnvironment) {
-        final String tableName = ConfigurationHelper.getString(TABLE_PARAM, params, DEF_TABLE);
+    @SuppressWarnings({"UnusedParameters", "WeakerAccess"})
+    protected QualifiedName determineGeneratorTableName(Properties params, JdbcEnvironment jdbcEnvironment, ServiceRegistry serviceRegistry) {
+
+        String fallbackTableName = DEF_TABLE;
+
+        final Boolean preferGeneratorNameAsDefaultName = serviceRegistry.getService(ConfigurationService.class)
+                .getSetting(AvailableSettings.PREFER_GENERATOR_NAME_AS_DEFAULT_SEQUENCE_NAME, StandardConverters.BOOLEAN, true);
+        if (preferGeneratorNameAsDefaultName) {
+            final String generatorName = params.getProperty(IdentifierGenerator.GENERATOR_NAME);
+            if (StringHelper.isNotEmpty(generatorName)) {
+                fallbackTableName = generatorName;
+            }
+        }
+
+
+        String tableName = ConfigurationHelper.getString(TABLE_PARAM, params, fallbackTableName);
 
         if (tableName.contains(".")) {
             return QualifiedNameParser.INSTANCE.parse(tableName);
@@ -331,14 +420,15 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
     /**
      * Determine the name of the column used to indicate the segment for each
      * row.  This column acts as the primary key.
+     * <p/>
      * Called during {@link #configure configuration}.
      *
-     * @param params          The params supplied in the generator config (plus some standard useful extras).
+     * @see #getSegmentColumnName()
+     * @param params The params supplied in the generator config (plus some standard useful extras).
      * @param jdbcEnvironment The JDBC environment
      * @return The name of the segment column
-     * @see #getSegmentColumnName()
      */
-    @SuppressWarnings("UnusedParameters")
+    @SuppressWarnings({"UnusedParameters", "WeakerAccess"})
     protected String determineSegmentColumnName(Properties params, JdbcEnvironment jdbcEnvironment) {
         final String name = ConfigurationHelper.getString(SEGMENT_COLUMN_PARAM, params, DEF_SEGMENT_COLUMN);
         return jdbcEnvironment.getIdentifierHelper().toIdentifier(name).render(jdbcEnvironment.getDialect());
@@ -346,14 +436,15 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
 
     /**
      * Determine the name of the column in which we will store the generator persistent value.
+     * <p/>
      * Called during {@link #configure configuration}.
      *
-     * @param params          The params supplied in the generator config (plus some standard useful extras).
+     * @see #getValueColumnName()
+     * @param params The params supplied in the generator config (plus some standard useful extras).
      * @param jdbcEnvironment The JDBC environment
      * @return The name of the value column
-     * @see #getValueColumnName()
      */
-    @SuppressWarnings("UnusedParameters")
+    @SuppressWarnings({"UnusedParameters", "WeakerAccess"})
     protected String determineValueColumnName(Properties params, JdbcEnvironment jdbcEnvironment) {
         final String name = ConfigurationHelper.getString(VALUE_COLUMN_PARAM, params, DEF_VALUE_COLUMN);
         return jdbcEnvironment.getIdentifierHelper().toIdentifier(name).render(jdbcEnvironment.getDialect());
@@ -361,12 +452,14 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
 
     /**
      * Determine the segment value corresponding to this generator instance.
+     * <p/>
      * Called during {@link #configure configuration}.
      *
+     * @see #getSegmentValue()
      * @param params The params supplied in the generator config (plus some standard useful extras).
      * @return The name of the value column
-     * @see #getSegmentValue()
      */
+    @SuppressWarnings("WeakerAccess")
     protected String determineSegmentValue(Properties params) {
         String segmentValue = params.getProperty(SEGMENT_VALUE_PARAM);
         if (StringHelper.isEmpty(segmentValue)) {
@@ -382,6 +475,7 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
      * @param params The params supplied in the generator config (plus some standard useful extras).
      * @return The default segment value to use.
      */
+    @SuppressWarnings("WeakerAccess")
     protected String determineDefaultSegmentValue(Properties params) {
         final boolean preferSegmentPerEntity = ConfigurationHelper.getBoolean(CONFIG_PREFER_SEGMENT_PER_ENTITY, params, false);
         final String defaultToUse = preferSegmentPerEntity ? params.getProperty(TABLE) : DEF_SEGMENT_VALUE;
@@ -391,25 +485,29 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
 
     /**
      * Determine the size of the {@link #getSegmentColumnName segment column}
+     * <p/>
      * Called during {@link #configure configuration}.
      *
+     * @see #getSegmentValueLength()
      * @param params The params supplied in the generator config (plus some standard useful extras).
      * @return The size of the segment column
-     * @see #getSegmentValueLength()
      */
+    @SuppressWarnings("WeakerAccess")
     protected int determineSegmentColumnSize(Properties params) {
         return ConfigurationHelper.getInt(SEGMENT_LENGTH_PARAM, params, DEF_SEGMENT_LENGTH);
     }
 
+    @SuppressWarnings("WeakerAccess")
     protected int determineInitialValue(Properties params) {
         return ConfigurationHelper.getInt(INITIAL_PARAM, params, DEFAULT_INITIAL_VALUE);
     }
 
+    @SuppressWarnings("WeakerAccess")
     protected int determineIncrementSize(Properties params) {
         return ConfigurationHelper.getInt(INCREMENT_PARAM, params, DEFAULT_INCREMENT_SIZE);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "WeakerAccess"})
     protected String buildSelectQuery(Dialect dialect) {
         final String alias = "tbl";
         final String query = "select " + StringHelper.qualify(alias, valueColumnName) +
@@ -421,14 +519,24 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
         return dialect.applyLocksToSql(query, lockOptions, updateTargetColumnsMap);
     }
 
+    @SuppressWarnings("WeakerAccess")
     protected String buildUpdateQuery() {
         return "update " + renderedTableName +
                 " set " + valueColumnName + "=? " +
                 " where " + valueColumnName + "=? and " + segmentColumnName + "=?";
     }
 
+    @SuppressWarnings("WeakerAccess")
     protected String buildInsertQuery() {
         return "insert into " + renderedTableName + " (" + segmentColumnName + ", " + valueColumnName + ") " + " values (?,?)";
+    }
+
+    protected InitCommand generateInsertInitCommand() {
+        int value = initialValue;
+        if (storeLastUsedValue) {
+            value = initialValue - 1;
+        }
+        return new InitCommand("insert into " + renderedTableName + "(" + segmentColumnName + ", " + valueColumnName + ")" + " values ('" + segmentValue + "'," + (value) + ")");
     }
 
     private IntegralDataTypeHolder makeValue() {
@@ -453,19 +561,43 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
                                         final IntegralDataTypeHolder value = makeValue();
                                         int rows;
                                         do {
-                                            try (PreparedStatement selectPS = prepareStatement(connection, selectQuery, statementLogger, statsCollector)) {
+
+                                            try (PreparedStatement selectPS = prepareStatement(
+                                                    connection,
+                                                    selectQuery,
+                                                    statementLogger,
+                                                    statsCollector
+                                            )) {
                                                 selectPS.setString(1, segmentValue);
                                                 final ResultSet selectRS = executeQuery(selectPS, statsCollector);
                                                 if (!selectRS.next()) {
-                                                    value.initialize(initialValue);
+                                                    long initializationValue;
+                                                    if (storeLastUsedValue) {
+                                                        initializationValue = initialValue - 1;
+                                                    } else {
+                                                        initializationValue = initialValue;
+                                                    }
+                                                    value.initialize(initializationValue);
 
-                                                    try (PreparedStatement insertPS = prepareStatement(connection, insertQuery, statementLogger, statsCollector)) {
+                                                    try (PreparedStatement insertPS = prepareStatement(
+                                                            connection,
+                                                            insertQuery,
+                                                            statementLogger,
+                                                            statsCollector
+                                                    )) {
+                                                        LOG.tracef("binding parameter [%s] - [%s]", 1, segmentValue);
                                                         insertPS.setString(1, segmentValue);
                                                         value.bind(insertPS, 2);
                                                         executeUpdate(insertPS, statsCollector);
                                                     }
                                                 } else {
-                                                    value.initialize(selectRS, 1);
+                                                    int defaultValue;
+                                                    if (storeLastUsedValue) {
+                                                        defaultValue = 0;
+                                                    } else {
+                                                        defaultValue = 1;
+                                                    }
+                                                    value.initialize(selectRS, defaultValue);
                                                 }
                                                 selectRS.close();
                                             } catch (SQLException e) {
@@ -474,7 +606,12 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
                                             }
 
 
-                                            try (PreparedStatement updatePS = prepareStatement(connection, updateQuery, statementLogger, statsCollector)) {
+                                            try (PreparedStatement updatePS = prepareStatement(
+                                                    connection,
+                                                    updateQuery,
+                                                    statementLogger,
+                                                    statsCollector
+                                            )) {
                                                 final IntegralDataTypeHolder updateValue = value.copy();
                                                 if (optimizer.applyIncrementSizeToSourceValues()) {
                                                     updateValue.add(incrementSize);
@@ -493,8 +630,11 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
                                         while (rows == 0);
 
                                         accessCount++;
-
-                                        return value;
+                                        if (storeLastUsedValue) {
+                                            return value.increment();
+                                        } else {
+                                            return value;
+                                        }
                                     }
                                 },
                                 true
@@ -552,13 +692,11 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
         };
     }
 
-    @SuppressWarnings({"deprecation"})
     @Override
     public String[] sqlDropStrings(Dialect dialect) throws HibernateException {
         return new String[]{dialect.getDropTableString(renderedTableName)};
     }
 
-    @SuppressWarnings({"deprecation"})
     @Override
     public void registerExportables(Database database) {
         final Dialect dialect = database.getJdbcEnvironment().getDialect();
@@ -601,10 +739,10 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
                 table.getQualifiedTableName(),
                 dialect
         );
+        table.addInitCommand(generateInsertInitCommand());
 
         this.selectQuery = buildSelectQuery(dialect);
         this.updateQuery = buildUpdateQuery();
         this.insertQuery = buildInsertQuery();
-
     }
 }

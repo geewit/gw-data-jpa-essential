@@ -5,6 +5,7 @@ dependencies {
     compileOnly("javax.servlet:javax.servlet-api:$javax_servlet_api_version")
     compile("io.geewit.core:gw-core-exception:$gw_core_exception_version")
     compile("io.geewit.core:gw-core-jackson:$gw_core_jackson_version")
+    compile("io.geewit.core:gw-snowflake:$gw_snowflake_version")
     compile("io.geewit.utils.core:gw-core-enum-utils:$gw_utils_version")
     compile("io.geewit.utils.core:gw-core-lang-utils:$gw_utils_version")
     compile("io.geewit.utils.core:gw-core-uuid-utils:$gw_utils_version")
