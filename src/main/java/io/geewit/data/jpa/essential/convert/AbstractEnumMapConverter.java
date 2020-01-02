@@ -7,7 +7,7 @@ import javax.persistence.AttributeConverter;
 import java.util.Map;
 
 @SuppressWarnings({"unused"})
-public abstract class AbstractEnumMapConverter<E extends Enum> implements AttributeConverter<Map<E, Boolean>, Integer> {
+public abstract class AbstractEnumMapConverter<E extends Enum<E>> implements AttributeConverter<Map<E, Boolean>, Integer> {
     protected Class<E> clazz;
 
     @SuppressWarnings({"unchecked"})
