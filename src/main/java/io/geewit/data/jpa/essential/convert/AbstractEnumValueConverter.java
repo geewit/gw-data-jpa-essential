@@ -1,8 +1,8 @@
 package io.geewit.data.jpa.essential.convert;
 
 
-import io.geewit.core.utils.lang.enums.EnumUtils;
-import io.geewit.core.utils.lang.enums.Value;
+import io.geewit.core.utils.enums.EnumUtils;
+import io.geewit.core.utils.enums.Value;
 
 import javax.persistence.AttributeConverter;
 import java.lang.reflect.ParameterizedType;

@@ -1,7 +1,7 @@
 package io.geewit.data.jpa.essential.convert;
 
 
-import io.geewit.core.utils.lang.enums.EnumMapUtils;
+import io.geewit.core.utils.enums.EnumMapUtils;
 
 import javax.persistence.AttributeConverter;
 import java.util.Map;

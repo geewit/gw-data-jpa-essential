@@ -1,6 +1,5 @@
 package io.geewit.data.jpa.essential.domain;
 
-import com.google.common.collect.Lists;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Sort;
@@ -8,6 +7,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.util.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -38,9 +38,9 @@ public class SortFactory {
     public static Sort create(Sort sort, String sortPropterty, Direction direction) {
         List<Order> orderList;
         if(sort != null) {
-            orderList = Lists.newArrayList(sort.iterator());
+            orderList = sort.toList();
         } else {
-            orderList = Lists.newArrayList();
+            orderList = new ArrayList<>();
         }
         if(sortPropterty != null) {
             orderList.add(new Order(direction != null ? direction : defaultDirection, sortPropterty));
@@ -56,9 +56,9 @@ public class SortFactory {
     public static Sort create(Sort sort, Order... orders) {
         List<Order> orderList;
         if(sort != null) {
-            orderList = Lists.newArrayList(sort.iterator());
+            orderList = sort.toList();
         } else {
-            orderList = Lists.newArrayList();
+            orderList = new ArrayList<>();
         }
         if(orders != null) {
             Collections.addAll(orderList, orders);
@@ -70,10 +70,10 @@ public class SortFactory {
         if(ArrayUtils.isEmpty(sorts)) {
             return null;
         }
-        List<Order> orderList = Lists.newArrayList();
+        List<Order> orderList = new ArrayList<>();
         for(Sort sort : sorts) {
             if(sort != null) {
-                orderList.addAll(Lists.newArrayList(sort.iterator()));
+                orderList.addAll(sort.toList());
             }
         }
         return Sort.by(orderList);

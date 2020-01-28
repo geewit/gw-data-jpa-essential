@@ -1,14 +1,9 @@
 package io.geewit.data.jpa.essential.search;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
-import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 /**
  * 构造｛@link org.springframework.data.jpa.domain.Specification｝的工具类
@@ -62,7 +57,7 @@ public class SearchFilter {
      */
     @SuppressWarnings({"unused"})
     public static Collection<SearchFilter> parse(Map<String, Object> searchParams) {
-        Set<SearchFilter> filters = Sets.newHashSet();
+        Set<SearchFilter> filters = new HashSet<>();
         SearchFilter filter;
         for (Entry<String, Object> entry : searchParams.entrySet()) {
             String key = entry.getKey();
@@ -141,27 +136,27 @@ public class SearchFilter {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
         SearchFilter that = (SearchFilter) o;
-        return Objects.equal(fieldName, that.fieldName) && Objects.equal(operator, that.operator);
+        return Objects.equals(fieldName, that.fieldName) &&
+                operator == that.operator &&
+                Arrays.equals(values, that.values);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(fieldName, operator);
+        int result = Objects.hash(fieldName, operator);
+        result = 31 * result + Arrays.hashCode(values);
+        return result;
     }
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("fieldName", fieldName)
-                .add("values", values)
-                .add("operator", operator)
-                .toString();
+        return "SearchFilter{" +
+                "fieldName='" + fieldName + '\'' +
+                ", operator=" + operator +
+                ", values=" + Arrays.toString(values) +
+                '}';
     }
 }

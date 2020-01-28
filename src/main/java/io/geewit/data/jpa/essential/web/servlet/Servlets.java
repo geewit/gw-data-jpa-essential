@@ -1,18 +1,17 @@
 package io.geewit.data.jpa.essential.web.servlet;
 
-
-import com.google.common.collect.Maps;
-import com.google.common.net.HttpHeaders;
 import io.geewit.core.utils.lang.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.context.request.WebRequest;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 /**
  Http与Servlet工具类.
@@ -58,7 +57,7 @@ public class Servlets {
         logger.debug("prefix = " + prefix);
         Validate.notNull(request, "Request must not be null");
         Iterator<String> paramNames = request.getParameterNames();
-        Map<String, Object> params = Maps.newTreeMap();
+        Map<String, Object> params = new TreeMap<>();
         if (prefix == null) {
             prefix = "";
         }

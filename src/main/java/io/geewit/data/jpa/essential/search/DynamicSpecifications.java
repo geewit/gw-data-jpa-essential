@@ -1,6 +1,5 @@
 package io.geewit.data.jpa.essential.search;
 
-import com.google.common.collect.Lists;
 import io.geewit.core.exception.ProcessedException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -12,6 +11,8 @@ import javax.persistence.criteria.Predicate;
 import java.text.ParseException;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * 构造 {@link org.springframework.data.jpa.domain.Specification} 的工具类
@@ -33,7 +34,7 @@ public class DynamicSpecifications {
         return (root, criteriaQuery, criteriaBuilder) -> {
             if (filters != null && !filters.isEmpty()) {
                 logger.debug("filters != null");
-                List<Predicate> predicates = Lists.newArrayList();
+                List<Predicate> predicates = new ArrayList<>();
                 for (SearchFilter filter : filters) {
                     if (logger.isDebugEnabled()) {
                         logger.debug("filter.fieldName = " + filter.fieldName());
@@ -232,7 +233,7 @@ public class DynamicSpecifications {
      */
     public static <T> Specification<T> mergeSpecification(Specification<T> firstSpecification, Specification<T>... specifications) {
         return (root, criteriaQuery, criteriaBuilder) -> {
-            List<Predicate> predicates = Lists.newArrayList(firstSpecification.toPredicate(root, criteriaQuery, criteriaBuilder));
+            List<Predicate> predicates = Stream.of(firstSpecification.toPredicate(root, criteriaQuery, criteriaBuilder)).collect(Collectors.toList());
             if (specifications != null) {
                 for (Specification<T> specification : specifications) {
                     predicates.add(specification.toPredicate(root, criteriaQuery, criteriaBuilder));
