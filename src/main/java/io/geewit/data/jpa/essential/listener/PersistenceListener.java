@@ -1,6 +1,5 @@
 package io.geewit.data.jpa.essential.listener;
 
-
 import io.geewit.data.jpa.essential.entity.ListenedEntity;
 
 import javax.persistence.PrePersist;
@@ -14,23 +13,13 @@ import java.util.Date;
  @since  2015-05-18
  */
 public class PersistenceListener {
+    @PreUpdate
     @PrePersist
     public void prePersist(ListenedEntity listenedEntity) {
         Date now = Calendar.getInstance().getTime();
-        if(listenedEntity.getCreateTime() == null) {
-            listenedEntity.setCreateTime(now);
+        if(listenedEntity.getOperateTime() == null) {
+            listenedEntity.setOperateTime(now);
         }
-        if(listenedEntity.getUpdateTime() == null) {
-            listenedEntity.setUpdateTime(now);
-        }
-        if(listenedEntity.getDelFlag() == null) {
-            listenedEntity.setDelFlag(false);
-        }
-    }
-
-    @PreUpdate
-    public void preUpdate(ListenedEntity listenedEntity) {
-        listenedEntity.setUpdateTime(Calendar.getInstance().getTime());
         if(listenedEntity.getDelFlag() == null) {
             listenedEntity.setDelFlag(false);
         }
