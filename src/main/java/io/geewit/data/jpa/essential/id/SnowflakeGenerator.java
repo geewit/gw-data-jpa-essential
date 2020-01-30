@@ -46,7 +46,7 @@ public class SnowflakeGenerator implements IdentifierGenerator, Configurable {
                 logger.debug("settings.workerId = " + workerId);
                 try {
                     WORKER_ID = Long.parseLong(workerId);
-                } catch (NumberFormatException e) {
+                } catch (NumberFormatException ignored) {
                 }
             } else {
                 Object objAppId = settings.get(APP_ID_SETTING_KEY);
@@ -55,7 +55,7 @@ public class SnowflakeGenerator implements IdentifierGenerator, Configurable {
                     logger.debug("settings.appId = " + appId);
                     try {
                         APP_ID = Long.parseLong(appId);
-                    } catch (NumberFormatException e) {
+                    } catch (NumberFormatException ignored) {
                     }
                 }
                 if(APP_ID == 0) {
