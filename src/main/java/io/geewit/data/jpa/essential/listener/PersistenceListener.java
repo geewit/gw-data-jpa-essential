@@ -16,8 +16,8 @@ public class PersistenceListener {
     @PreUpdate
     @PrePersist
     public void prePersist(ListenedEntity listenedEntity) {
-        Date now = Calendar.getInstance().getTime();
         if(listenedEntity.getOperateTime() == null) {
+            Date now = Calendar.getInstance().getTime();
             listenedEntity.setOperateTime(now);
         }
         if(listenedEntity.getDelFlag() == null) {

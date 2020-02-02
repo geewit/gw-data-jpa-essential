@@ -87,13 +87,7 @@ public class SearchFilter {
      */
     @SuppressWarnings({"unused"})
     public static void addFilter(Collection<SearchFilter> filters, SearchFilter filter) {
-        boolean notExist = true;
-        for (SearchFilter existFilter : filters) {
-            if (existFilter.fieldName.equals(filter.fieldName)) {
-                notExist = false;
-                break;
-            }
-        }
+        boolean notExist = filters.stream().noneMatch(existFilter -> existFilter.fieldName.equals(filter.fieldName));
         if (notExist) {
             filters.add(filter);
         }
@@ -108,12 +102,7 @@ public class SearchFilter {
      */
     @SuppressWarnings({"unused"})
     public static boolean exists(Collection<SearchFilter> filters, String fieldName) {
-        for (SearchFilter existFilter : filters) {
-            if (existFilter.fieldName.equals(fieldName)) {
-                return true;
-            }
-        }
-        return false;
+        return filters.stream().anyMatch(existFilter -> existFilter.fieldName.equals(fieldName));
     }
 
     public String fieldName() {

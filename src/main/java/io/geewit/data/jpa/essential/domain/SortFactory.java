@@ -5,11 +5,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.domain.Sort.Order;
+import org.springframework.data.util.Streamable;
 import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  制造Sort的工厂类
@@ -71,11 +70,7 @@ public class SortFactory {
             return null;
         }
         List<Order> orderList = new ArrayList<>();
-        for(Sort sort : sorts) {
-            if(sort != null) {
-                orderList.addAll(sort.toList());
-            }
-        }
+        Arrays.stream(sorts).filter(Objects::nonNull).map(Streamable::toList).forEach(orderList::addAll);
         return Sort.by(orderList);
     }
 }

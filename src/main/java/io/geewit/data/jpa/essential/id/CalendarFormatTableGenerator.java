@@ -93,9 +93,7 @@ public class CalendarFormatTableGenerator extends TableGenerator {
                                                 final ResultSet selectRS = executeQuery(selectPS, statsCollector);
                                                 boolean needInitialize = false;
                                                 boolean needRefresh = false;
-                                                if (!selectRS.next()) {
-                                                    needInitialize = true;
-                                                } else if (selectRS.wasNull()) {
+                                                if (!selectRS.next() || selectRS.wasNull()) {
                                                     needInitialize = true;
                                                 }
                                                 if (needInitialize) {

@@ -11,11 +11,11 @@ import org.springframework.data.domain.Sort;
  */
 @SuppressWarnings({"unused"})
 public class PageableFactory {
-    private final static int defaultSize = 20;
-    private final static String defaultSort = null;
+    private final static int DEFAULT_SIZE = 20;
+    private final static String DEFAULT_SORT = null;
 
     public static Pageable create(Integer page, Integer size) {
-        return PageRequest.of(page, null != size && size > 0 ? size : defaultSize);
+        return PageRequest.of(page, null != size && size > 0 ? size : DEFAULT_SIZE);
     }
 
     public static Pageable create(Integer page, Integer size, int defaultSize) {
@@ -23,7 +23,7 @@ public class PageableFactory {
     }
 
     public static Pageable create(Integer page, Integer size, Sort sort) {
-        return PageRequest.of(page, null != size && size > 0 ? size : defaultSize, sort);
+        return PageRequest.of(page, null != size && size > 0 ? size : DEFAULT_SIZE, sort);
     }
 
     public static Pageable create(Integer page, Integer size, int defaultSize, Sort sort) {
@@ -31,15 +31,15 @@ public class PageableFactory {
     }
 
     public static Pageable create(Integer page, Integer size, String sort, String order) {
-        return create(page, size, defaultSize, sort, defaultSort, order);
+        return create(page, size, DEFAULT_SIZE, sort, DEFAULT_SORT, order);
     }
 
     public static Pageable create(Integer page, Integer size, int defaultSize, String sort, String order) {
-        return create(page, size, defaultSize, sort, defaultSort, order);
+        return create(page, size, defaultSize, sort, DEFAULT_SORT, order);
     }
 
     public static Pageable create(Integer page, Integer size, String sort, String defaultSort, String order) {
-        return create(page, size, defaultSize, sort, defaultSort, order);
+        return create(page, size, DEFAULT_SIZE, sort, defaultSort, order);
     }
 
     public static Pageable create(Integer page, Integer size, int defaultSize, String sortProperty, String defaultSort, String order) {

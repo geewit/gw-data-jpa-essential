@@ -15,13 +15,11 @@ public abstract class AbstractEnumNameConverter<E extends Enum<E> & Name> implem
 
     protected Class<E> clazz;
 
-    @SuppressWarnings({"unchecked"})
     @Override
     public String convertToDatabaseColumn(E enumValue) {
         return enumValue.toString();
     }
 
-    @SuppressWarnings({"unchecked"})
     @Override
     public E convertToEntityAttribute(String columnValue) {
         return EnumUtils.forToken(clazz, columnValue);

@@ -515,7 +515,7 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
                 " where " + StringHelper.qualify(alias, segmentColumnName) + "=?";
         final LockOptions lockOptions = new LockOptions(LockMode.PESSIMISTIC_WRITE);
         lockOptions.setAliasSpecificLockMode(alias, LockMode.PESSIMISTIC_WRITE);
-        final Map updateTargetColumnsMap = Collections.singletonMap(alias, new String[]{valueColumnName});
+        final Map<String, String[]> updateTargetColumnsMap = Collections.singletonMap(alias, new String[]{valueColumnName});
         return dialect.applyLocksToSql(query, lockOptions, updateTargetColumnsMap);
     }
 
@@ -554,91 +554,77 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
                 new AccessCallback() {
                     @Override
                     public IntegralDataTypeHolder getNextValue() {
-                        return session.getTransactionCoordinator().createIsolationDelegate().delegateWork(
-                                new AbstractReturningWork<IntegralDataTypeHolder>() {
-                                    @Override
-                                    public IntegralDataTypeHolder execute(Connection connection) throws SQLException {
-                                        final IntegralDataTypeHolder value = makeValue();
-                                        int rows;
-                                        do {
+                        return session.getTransactionCoordinator().createIsolationDelegate().delegateWork(new AbstractReturningWork<IntegralDataTypeHolder>() {
+                            @Override
+                            public IntegralDataTypeHolder execute(Connection connection) throws SQLException {
+                                final IntegralDataTypeHolder value = makeValue();
+                                int rows;
+                                do {
+                                    try (PreparedStatement selectPS = prepareStatement(
+                                            connection,
+                                            selectQuery,
+                                            statementLogger,
+                                            statsCollector
+                                    )) {
+                                        selectPS.setString(1, segmentValue);
+                                        final ResultSet selectRS = executeQuery(selectPS, statsCollector);
+                                        if (!selectRS.next()) {
+                                            long initializationValue = storeLastUsedValue ? initialValue - 1 : initialValue;
+                                            value.initialize(initializationValue);
 
-                                            try (PreparedStatement selectPS = prepareStatement(
+                                            try (PreparedStatement insertPS = prepareStatement(
                                                     connection,
-                                                    selectQuery,
+                                                    insertQuery,
                                                     statementLogger,
                                                     statsCollector
                                             )) {
-                                                selectPS.setString(1, segmentValue);
-                                                final ResultSet selectRS = executeQuery(selectPS, statsCollector);
-                                                if (!selectRS.next()) {
-                                                    long initializationValue;
-                                                    if (storeLastUsedValue) {
-                                                        initializationValue = initialValue - 1;
-                                                    } else {
-                                                        initializationValue = initialValue;
-                                                    }
-                                                    value.initialize(initializationValue);
-
-                                                    try (PreparedStatement insertPS = prepareStatement(
-                                                            connection,
-                                                            insertQuery,
-                                                            statementLogger,
-                                                            statsCollector
-                                                    )) {
-                                                        LOG.tracef("binding parameter [%s] - [%s]", 1, segmentValue);
-                                                        insertPS.setString(1, segmentValue);
-                                                        value.bind(insertPS, 2);
-                                                        executeUpdate(insertPS, statsCollector);
-                                                    }
-                                                } else {
-                                                    int defaultValue;
-                                                    if (storeLastUsedValue) {
-                                                        defaultValue = 0;
-                                                    } else {
-                                                        defaultValue = 1;
-                                                    }
-                                                    value.initialize(selectRS, defaultValue);
-                                                }
-                                                selectRS.close();
-                                            } catch (SQLException e) {
-                                                LOG.unableToReadOrInitHiValue(e);
-                                                throw e;
+                                                LOG.tracef("binding parameter [%s] - [%s]", 1, segmentValue);
+                                                insertPS.setString(1, segmentValue);
+                                                value.bind(insertPS, 2);
+                                                executeUpdate(insertPS, statsCollector);
                                             }
-
-
-                                            try (PreparedStatement updatePS = prepareStatement(
-                                                    connection,
-                                                    updateQuery,
-                                                    statementLogger,
-                                                    statsCollector
-                                            )) {
-                                                final IntegralDataTypeHolder updateValue = value.copy();
-                                                if (optimizer.applyIncrementSizeToSourceValues()) {
-                                                    updateValue.add(incrementSize);
-                                                } else {
-                                                    updateValue.increment();
-                                                }
-                                                updateValue.bind(updatePS, 1);
-                                                value.bind(updatePS, 2);
-                                                updatePS.setString(3, segmentValue);
-                                                rows = executeUpdate(updatePS, statsCollector);
-                                            } catch (SQLException e) {
-                                                LOG.unableToUpdateQueryHiValue(renderedTableName, e);
-                                                throw e;
-                                            }
-                                        }
-                                        while (rows == 0);
-
-                                        accessCount++;
-                                        if (storeLastUsedValue) {
-                                            return value.increment();
                                         } else {
-                                            return value;
+                                            int defaultValue = storeLastUsedValue ? 0 : 1;
+                                            value.initialize(selectRS, defaultValue);
                                         }
+                                        selectRS.close();
+                                    } catch (SQLException e) {
+                                        LOG.unableToReadOrInitHiValue(e);
+                                        throw e;
                                     }
-                                },
-                                true
-                        );
+
+
+                                    try (PreparedStatement updatePS = prepareStatement(
+                                            connection,
+                                            updateQuery,
+                                            statementLogger,
+                                            statsCollector
+                                    )) {
+                                        final IntegralDataTypeHolder updateValue = value.copy();
+                                        if (optimizer.applyIncrementSizeToSourceValues()) {
+                                            updateValue.add(incrementSize);
+                                        } else {
+                                            updateValue.increment();
+                                        }
+                                        updateValue.bind(updatePS, 1);
+                                        value.bind(updatePS, 2);
+                                        updatePS.setString(3, segmentValue);
+                                        rows = executeUpdate(updatePS, statsCollector);
+                                    } catch (SQLException e) {
+                                        LOG.unableToUpdateQueryHiValue(renderedTableName, e);
+                                        throw e;
+                                    }
+                                }
+                                while (rows == 0);
+
+                                accessCount++;
+                                if (storeLastUsedValue) {
+                                    return value.increment();
+                                } else {
+                                    return value;
+                                }
+                            }
+                        }, true);
                     }
 
                     @Override
