@@ -214,8 +214,9 @@ public class DynamicSpecifications {
                 }
 
                 if (!predicates.isEmpty()) {
-                    return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+                    criteriaQuery.where(predicates.toArray(new Predicate[0]));
                 }
+                return criteriaQuery.getRestriction();
             } else {
                 logger.debug("filters == null");
             }
@@ -240,9 +241,9 @@ public class DynamicSpecifications {
                 }
             }
             if (!predicates.isEmpty()) {
-                return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+                criteriaQuery.where(predicates.toArray(new Predicate[0]));
             }
-            return criteriaBuilder.conjunction();
+            return criteriaQuery.getRestriction();
         };
     }
 

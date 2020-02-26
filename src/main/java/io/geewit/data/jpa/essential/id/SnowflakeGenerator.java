@@ -35,10 +35,11 @@ public class SnowflakeGenerator implements IdentifierGenerator, Configurable {
     private static long WORKER_ID;
     private static long APP_ID;
 
+
     @Override
     public void configure(Type type, Properties params, ServiceRegistry serviceRegistry) throws MappingException {
         if(WORKER_ID == 0) {
-            Map settings = serviceRegistry.getService(ConfigurationService.class).getSettings();
+            Map<?, ?> settings = serviceRegistry.getService(ConfigurationService.class).getSettings();
             Object objWorkerId = settings.get(WORKER_ID_SETTING_KEY);
             String workerId;
             if(objWorkerId != null) {
@@ -77,8 +78,16 @@ public class SnowflakeGenerator implements IdentifierGenerator, Configurable {
 
     @Override
     public Serializable generate(SharedSessionContractImplementor session, Object object) throws HibernateException {
-        long id = SnowFlake.ofCached(WORKER_ID).getUID();
+        long id = id();
         logger.debug("generate.id = " + id);
         return id;
+    }
+
+    /**
+     * 生成 snowflake id
+     * @return snowflake id
+     */
+    public static long id() {
+        return SnowFlake.ofCached(WORKER_ID).getUID();
     }
 }
