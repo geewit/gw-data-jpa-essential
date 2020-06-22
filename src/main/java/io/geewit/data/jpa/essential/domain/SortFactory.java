@@ -35,10 +35,11 @@ public class SortFactory {
     }
 
     public static Sort create(Sort sort, String sortPropterty, Direction direction) {
-        List<Order> orderList;
+        List<Order> orderList = null;
         if(sort != null) {
             orderList = sort.toList();
-        } else {
+        }
+        if(orderList == null) {
             orderList = new ArrayList<>();
         }
         if(sortPropterty != null) {
@@ -53,10 +54,11 @@ public class SortFactory {
 
 
     public static Sort create(Sort sort, Order... orders) {
-        List<Order> orderList;
+        List<Order> orderList = null;
         if(sort != null) {
             orderList = sort.toList();
-        } else {
+        }
+        if(orderList == null) {
             orderList = new ArrayList<>();
         }
         if(orders != null) {

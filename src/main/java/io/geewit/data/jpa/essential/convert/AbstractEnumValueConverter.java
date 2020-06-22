@@ -22,6 +22,10 @@ public abstract class AbstractEnumValueConverter<E extends Enum<E> & Value> impl
 
     @Override
     public E convertToEntityAttribute(Integer columnValue) {
-        return EnumUtils.forToken(clazz, columnValue);
+        try {
+            return EnumUtils.forToken(clazz, columnValue);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 }
