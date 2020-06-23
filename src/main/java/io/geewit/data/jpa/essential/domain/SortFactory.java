@@ -17,18 +17,18 @@ import java.util.*;
  */
 @SuppressWarnings({"unused"})
 public class SortFactory {
-    private final static Direction defaultDirection = Direction.DESC;
+    private final static Direction DEFAULT_DIRECTION = Direction.DESC;
 
     public static Sort create(String sortProperty, Direction direction) {
         if(sortProperty == null) {
-            return null;
+            return Sort.unsorted();
         }
         return Sort.by(direction, sortProperty);
     }
 
     public static Sort create(String sortProperty, String order) {
         if(sortProperty == null) {
-            return null;
+            return Sort.unsorted();
         }
         Direction direction = (StringUtils.isNotBlank(order) && Direction.DESC.name().equalsIgnoreCase(order)) ? Direction.DESC : Direction.ASC;
         return Sort.by(direction, sortProperty);
@@ -43,13 +43,13 @@ public class SortFactory {
             orderList = new ArrayList<>();
         }
         if(sortPropterty != null) {
-            orderList.add(new Order(direction != null ? direction : defaultDirection, sortPropterty));
+            orderList.add(new Order(direction != null ? direction : DEFAULT_DIRECTION, sortPropterty));
         }
-        return orderList.isEmpty() ? null : Sort.by(orderList);
+        return orderList.isEmpty() ? Sort.unsorted() : Sort.by(orderList);
     }
 
     public static Sort create(Sort sort, String sortPropterty) {
-        return create(sort, sortPropterty, defaultDirection);
+        return create(sort, sortPropterty, DEFAULT_DIRECTION);
     }
 
 
@@ -64,12 +64,12 @@ public class SortFactory {
         if(orders != null) {
             Collections.addAll(orderList, orders);
         }
-        return CollectionUtils.isEmpty(orderList) ? null : Sort.by(orderList);
+        return CollectionUtils.isEmpty(orderList) ? Sort.unsorted() : Sort.by(orderList);
     }
 
     public static Sort create(Sort... sorts) {
         if(ArrayUtils.isEmpty(sorts)) {
-            return null;
+            return Sort.unsorted();
         }
         List<Order> orderList = new ArrayList<>();
         Arrays.stream(sorts).filter(Objects::nonNull).map(Streamable::toList).forEach(orderList::addAll);
