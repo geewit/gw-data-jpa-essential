@@ -35,12 +35,9 @@ public class SortFactory {
     }
 
     public static Sort create(Sort sort, String sortPropterty, Direction direction) {
-        List<Order> orderList = null;
+        List<Order> orderList = new ArrayList<>();
         if(sort != null) {
-            orderList = sort.toList();
-        }
-        if(orderList == null) {
-            orderList = new ArrayList<>();
+            orderList.addAll(sort.toList());
         }
         if(sortPropterty != null) {
             orderList.add(new Order(direction != null ? direction : DEFAULT_DIRECTION, sortPropterty));
@@ -54,12 +51,9 @@ public class SortFactory {
 
 
     public static Sort create(Sort sort, Order... orders) {
-        List<Order> orderList = null;
+        List<Order> orderList = new ArrayList<>();
         if(sort != null) {
-            orderList = sort.toList();
-        }
-        if(orderList == null) {
-            orderList = new ArrayList<>();
+            orderList.addAll(sort.toList());
         }
         if(orders != null) {
             Collections.addAll(orderList, orders);
