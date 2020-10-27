@@ -38,13 +38,12 @@ public class TupleQueryUtils {
      * Creates a new count query for the given {@link EntityManager}.
      *
      * @param entityManager can be {@literal null}.
-     * @param domainClass must not be {@literal null}.
+     * @param root must not be {@literal null}.
      * @return
      */
-    public static <T> TypedQuery<Long> getCountQuery(EntityManager entityManager, Class<T> domainClass, CriteriaQuery<Long> criteriaQuery, CriteriaBuilder criteriaBuilder, Predicate predicate) {
+    public static <T> TypedQuery<Long> getCountQuery(EntityManager entityManager, Root<T> root, CriteriaQuery<Long> criteriaQuery, CriteriaBuilder criteriaBuilder, Predicate predicate) {
 
         Assert.notNull(entityManager, "entityManager must not be null!");
-        Root<T> root = criteriaQuery.from(domainClass);
         if (criteriaQuery.isDistinct()) {
             criteriaQuery.select(criteriaBuilder.countDistinct(root));
         } else {
