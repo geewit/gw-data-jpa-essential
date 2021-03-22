@@ -1,6 +1,7 @@
 package io.geewit.data.jpa.essential.repository;
 
 import org.springframework.data.repository.NoRepositoryBean;
+import org.springframework.data.repository.Repository;
 
 import java.util.List;
 
@@ -9,7 +10,7 @@ import java.util.List;
  * @author geewit
  */
 @NoRepositoryBean
-public interface JpaBatchRepository<T> {
+public interface JpaBatchRepository<T, ID> extends Repository<T, ID> {
     /**
      * Batch Saves all given entities.
      *

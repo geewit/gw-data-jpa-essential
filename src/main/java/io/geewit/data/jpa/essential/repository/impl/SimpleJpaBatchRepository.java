@@ -4,7 +4,8 @@ import io.geewit.data.jpa.essential.repository.JpaBatchRepository;
 import org.hibernate.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.support.JpaEntityInformation;
+import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
@@ -15,16 +16,14 @@ import java.util.List;
  * 批量保存
  * @author geewit
  */
-@Repository
-public class SimpleJpaBatchRepository<T> implements JpaBatchRepository<T> {
+public class SimpleJpaBatchRepository<T, ID> extends SimpleJpaRepository<T, ID> implements JpaBatchRepository<T, ID> {
     private final static Logger logger = LoggerFactory.getLogger(SimpleJpaBatchRepository.class);
 
     private final EntityManager entityManager;
-    private final Session session;
 
-    public SimpleJpaBatchRepository(EntityManager entityManager) {
+    public SimpleJpaBatchRepository(JpaEntityInformation<T, ID> entityInformation, EntityManager entityManager) {
+        super(entityInformation, entityManager);
         this.entityManager = entityManager;
-        this.session = entityManager.unwrap(Session.class);
     }
 
     @Override
@@ -34,6 +33,7 @@ public class SimpleJpaBatchRepository<T> implements JpaBatchRepository<T> {
         try {
             entityTransaction.begin();
             int i = 0;
+            Session session = entityManager.unwrap(Session.class);
             int batchSize = session.getJdbcBatchSize();
             for (T entity: entities) {
                 if (i > 0 && (i % batchSize == 0)) {
