@@ -1,15 +1,16 @@
 package io.geewit.data.jpa.essential.repository.impl;
 
 import io.geewit.data.jpa.essential.repository.JpaBatchRepository;
-import org.hibernate.Session;
+import org.hibernate.cfg.AvailableSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
-import javax.persistence.EntityTransaction;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -21,42 +22,33 @@ public class SimpleJpaBatchRepository<T, ID> extends SimpleJpaRepository<T, ID> 
 
     private final EntityManager entityManager;
 
+    private final Integer batchSize;
+
     public SimpleJpaBatchRepository(JpaEntityInformation<T, ID> entityInformation, EntityManager entityManager) {
         super(entityInformation, entityManager);
         this.entityManager = entityManager;
+        Object batchSizeObj = entityManager.getProperties().get(AvailableSettings.STATEMENT_BATCH_SIZE);
+        this.batchSize = (Integer)batchSizeObj;
     }
 
+    @Transactional
     @Override
     public List<T> saveBatch(Iterable<T> entities) {
         List<T> result = new ArrayList<>();
-        EntityTransaction entityTransaction = entityManager.getTransaction();
-        try {
-            entityTransaction.begin();
-            int i = 0;
-            Session session = entityManager.unwrap(Session.class);
-            int batchSize = session.getJdbcBatchSize();
-            for (T entity: entities) {
-                if (i > 0 && (i % batchSize == 0)) {
-                    logger.info("Flushing the EntityManager containing {} entities ...", session.getJdbcBatchSize());
-                    entityTransaction.commit();
-                    entityTransaction.begin();
-                    entityManager.clear();
-                }
-                entityManager.persist(entity);
-                result.add(entity);
-                i++;
+        int i = 0;
+        for (Iterator<T> iterator = entities.iterator(); iterator.hasNext(); ) {
+            T entity = iterator.next();
+            entityManager.persist(entity);
+            i++;
+            if (i % this.batchSize == 0 || !iterator.hasNext()) {
+                logger.info("Flushing the EntityManager containing {} entities ...", i);
+                entityManager.flush();
+                entityManager.clear();
+                i = 0;
             }
-            logger.info("Flushing the remaining entities ...");
-            entityTransaction.commit();
-        } catch (RuntimeException e) {
-            if (entityTransaction.isActive()) {
-                entityTransaction.rollback();
-            }
-            throw e;
-        } finally {
-            entityManager.close();
+            result.add(entity);
         }
-
+        logger.info("Flushing the remaining entities ...");
         return result;
     }
 }
