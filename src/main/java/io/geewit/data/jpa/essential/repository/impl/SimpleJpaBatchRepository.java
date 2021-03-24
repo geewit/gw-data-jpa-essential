@@ -1,7 +1,6 @@
 package io.geewit.data.jpa.essential.repository.impl;
 
 import io.geewit.data.jpa.essential.repository.JpaBatchRepository;
-import org.hibernate.cfg.AvailableSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;
@@ -22,13 +21,12 @@ public class SimpleJpaBatchRepository<T, ID> extends SimpleJpaRepository<T, ID> 
 
     private final EntityManager entityManager;
 
-    private final Integer batchSize;
+    private final static Integer BATCH_SIZE = 500;
 
     public SimpleJpaBatchRepository(JpaEntityInformation<T, ID> entityInformation, EntityManager entityManager) {
         super(entityInformation, entityManager);
         this.entityManager = entityManager;
-        Object batchSizeObj = entityManager.getProperties().get(AvailableSettings.STATEMENT_BATCH_SIZE);
-        this.batchSize = (Integer)batchSizeObj;
+        logger.debug("BATCH_SIZE = {}", BATCH_SIZE);
     }
 
     @Transactional
@@ -40,7 +38,7 @@ public class SimpleJpaBatchRepository<T, ID> extends SimpleJpaRepository<T, ID> 
             T entity = iterator.next();
             entityManager.persist(entity);
             i++;
-            if (i % this.batchSize == 0 || !iterator.hasNext()) {
+            if (i % BATCH_SIZE == 0 || !iterator.hasNext()) {
                 logger.info("Flushing the EntityManager containing {} entities ...", i);
                 entityManager.flush();
                 entityManager.clear();
