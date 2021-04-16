@@ -64,7 +64,7 @@ public class SnowflakeGenerator implements IdentifierGenerator, Configurable {
                 }
                 try {
                     long mac = NetUtils.getLongMac();
-                    logger.info("mac: " + mac);
+                    logger.debug("mac: " + mac);
                     WORKER_ID = (APP_ID ^ mac);
                 } catch (SocketException e) {
                     logger.warn(e.getMessage());
@@ -73,6 +73,7 @@ public class SnowflakeGenerator implements IdentifierGenerator, Configurable {
             if(WORKER_ID == 0) {
                 WORKER_ID = RandomUtils.nextLong(1, 10000);
             }
+            logger.info("workId: {}", WORKER_ID);
         }
     }
 
@@ -88,6 +89,6 @@ public class SnowflakeGenerator implements IdentifierGenerator, Configurable {
      * @return snowflake id
      */
     public static long id() {
-        return SnowFlake.ofCached(WORKER_ID).getUID();
+        return SnowFlake.ofDefault(WORKER_ID).getUID();
     }
 }
