@@ -69,4 +69,13 @@ public class SortFactory {
         Arrays.stream(sorts).filter(Objects::nonNull).map(Streamable::toList).forEach(orderList::addAll);
         return Sort.by(orderList);
     }
+
+    public static Sort ofDefaultSort(Sort sort, Sort defaultSort) {
+        if(sort == null) {
+            sort = defaultSort;
+        } else if(sort.stream().noneMatch(order -> defaultSort.stream().anyMatch(defaultOrder -> defaultOrder.getProperty().equals(order.getProperty())))) {
+            sort = defaultSort.and(sort);
+        }
+        return sort;
+    }
 }

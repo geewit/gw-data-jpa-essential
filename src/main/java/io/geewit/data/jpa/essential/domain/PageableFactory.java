@@ -66,4 +66,14 @@ public class PageableFactory {
         Sort sort = SortFactory.create(pageable.getSort(), orders);
         return create(pageable.getPageNumber(), pageable.getPageSize(), sort);
     }
+
+    public static Pageable ofDefaultSort(Pageable pageable, Sort defaultSort) {
+        if(pageable == null) {
+            pageable = PageRequest.ofSize(DEFAULT_SIZE);
+        }
+        if(pageable.getSort().stream().noneMatch(order -> defaultSort.stream().anyMatch(defaultOrder -> defaultOrder.getProperty().equals(order.getProperty())))) {
+            pageable.getSort().and(defaultSort);
+        }
+        return pageable;
+    }
 }
