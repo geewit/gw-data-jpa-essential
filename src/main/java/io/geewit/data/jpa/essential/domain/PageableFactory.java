@@ -72,7 +72,7 @@ public class PageableFactory {
             pageable = PageRequest.ofSize(DEFAULT_SIZE);
         }
         if(pageable.getSort().stream().noneMatch(order -> defaultSort.stream().anyMatch(defaultOrder -> defaultOrder.getProperty().equals(order.getProperty())))) {
-            pageable.getSort().and(defaultSort);
+            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), defaultSort.and(pageable.getSort()));
         }
         return pageable;
     }
