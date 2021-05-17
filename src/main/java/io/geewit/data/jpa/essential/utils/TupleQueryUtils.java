@@ -49,6 +49,7 @@ public class TupleQueryUtils {
         Assert.notNull(criteriaQuery, "criteriaQuery must not be null!");
         Assert.notNull(criteriaBuilder, "criteriaBuilder must not be null!");
         if (criteriaQuery.isDistinct()) {
+            criteriaQuery.distinct(false);
             criteriaQuery.select(criteriaBuilder.countDistinct(root));
         } else {
             criteriaQuery.select(criteriaBuilder.count(root));
