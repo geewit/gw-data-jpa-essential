@@ -39,17 +39,23 @@ public class TupleQueryUtils {
      *
      * @param entityManager can be {@literal null}.
      * @param root must not be {@literal null}.
+     * @param criteriaQuery can be {@literal null}.
+     * @param criteriaBuilder can be {@literal null}.
      * @return
      */
     public static <T> TypedQuery<Long> getCountQuery(EntityManager entityManager, Root<T> root, CriteriaQuery<Long> criteriaQuery, CriteriaBuilder criteriaBuilder, Predicate predicate) {
 
         Assert.notNull(entityManager, "entityManager must not be null!");
+        Assert.notNull(criteriaQuery, "criteriaQuery must not be null!");
+        Assert.notNull(criteriaBuilder, "criteriaBuilder must not be null!");
         if (criteriaQuery.isDistinct()) {
             criteriaQuery.select(criteriaBuilder.countDistinct(root));
         } else {
             criteriaQuery.select(criteriaBuilder.count(root));
         }
-        criteriaQuery.where(predicate);
+        if(predicate != null) {
+            criteriaQuery.where(predicate);
+        }
         criteriaQuery.orderBy(Collections.emptyList());
         TypedQuery<Long> typedQuery = entityManager.createQuery(criteriaQuery);
 
