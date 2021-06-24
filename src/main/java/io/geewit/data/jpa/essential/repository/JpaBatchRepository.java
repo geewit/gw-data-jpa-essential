@@ -10,7 +10,7 @@ import java.util.List;
  * @author geewit
  */
 @NoRepositoryBean
-public interface JpaBatchRepository<T, ID> extends Repository<T, ID> {
+public interface JpaBatchRepository<T> {
     /**
      * Batch Saves all given entities.
      *

@@ -16,7 +16,7 @@ import java.util.List;
  * 批量保存
  * @author geewit
  */
-public class SimpleJpaBatchRepository<T, ID> extends SimpleJpaRepository<T, ID> implements JpaBatchRepository<T, ID> {
+public class SimpleJpaBatchRepository<T, ID> extends SimpleJpaRepository<T, ID> implements JpaBatchRepository<T> {
     private final static Logger logger = LoggerFactory.getLogger(SimpleJpaBatchRepository.class);
 
     private final EntityManager entityManager;
