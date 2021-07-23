@@ -12,7 +12,7 @@ import java.util.*;
 
 /**
  制造Sort的工厂类
- @author gelif
+ @author geewit
  @since  2015-5-18
  */
 @SuppressWarnings({"unused"})

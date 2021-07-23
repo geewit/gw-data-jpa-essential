@@ -20,5 +20,6 @@ dependencies {
     api("org.slf4j:slf4j-api:$slf4j_version") {
         exclude group: 'org.slf4j', module: 'logback'
     }
+    compileOnly("com.querydsl:querydsl-jpa:$querydsl_version")
     compileOnly("org.springframework:spring-web:$spring_version")
 }

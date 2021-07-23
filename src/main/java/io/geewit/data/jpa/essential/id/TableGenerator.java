@@ -50,13 +50,6 @@ import java.util.Properties;
  * performing generation, which would mean that we would have a row in the generator
  * table for each entity name.  Or any configuration really; the setup is very flexible.
  * <p/>
- * In this respect it is very similar to the legacy
- * {@link org.hibernate.id.MultipleHiLoPerTableGenerator} in terms of the
- * underlying storage structure (namely a single table capable of holding
- * multiple generator values).  The differentiator is, as with
- * {@link SequenceStyleGenerator} as well, the externalized notion
- * of an optimizer.
- * <p/>
  * <b>NOTE</b> that by default we use a single row for all generators (based
  * on {@link #DEF_SEGMENT_VALUE}).  The configuration parameter
  * {@link #CONFIG_PREFER_SEGMENT_PER_ENTITY} can be used to change that to
@@ -116,7 +109,7 @@ import java.util.Properties;
 public class TableGenerator implements PersistentIdentifierGenerator, Configurable {
     private static final CoreMessageLogger LOG = Logger.getMessageLogger(
             CoreMessageLogger.class,
-            org.hibernate.id.enhanced.TableGenerator.class.getName()
+            TableGenerator.class.getName()
     );
 
     /**
@@ -348,15 +341,15 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
 
         final JdbcEnvironment jdbcEnvironment = serviceRegistry.getService(JdbcEnvironment.class);
 
-        qualifiedTableName = determineGeneratorTableName(params, jdbcEnvironment, serviceRegistry);
-        segmentColumnName = determineSegmentColumnName(params, jdbcEnvironment);
-        valueColumnName = determineValueColumnName(params, jdbcEnvironment);
+        qualifiedTableName = this.determineGeneratorTableName(params, jdbcEnvironment, serviceRegistry);
+        segmentColumnName = this.determineSegmentColumnName(params, jdbcEnvironment);
+        valueColumnName = this.determineValueColumnName(params, jdbcEnvironment);
 
-        segmentValue = determineSegmentValue(params);
+        segmentValue = this.determineSegmentValue(params);
 
-        segmentValueLength = determineSegmentColumnSize(params);
-        initialValue = determineInitialValue(params);
-        incrementSize = determineIncrementSize(params);
+        segmentValueLength = this.determineSegmentColumnSize(params);
+        initialValue = this.determineInitialValue(params);
+        incrementSize = this.determineIncrementSize(params);
 
         final String optimizationStrategy = ConfigurationHelper.getString(
                 OPT_PARAM,
@@ -463,7 +456,7 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
     protected String determineSegmentValue(Properties params) {
         String segmentValue = params.getProperty(SEGMENT_VALUE_PARAM);
         if (StringHelper.isEmpty(segmentValue)) {
-            segmentValue = determineDefaultSegmentValue(params);
+            segmentValue = this.determineDefaultSegmentValue(params);
         }
         return segmentValue;
     }
@@ -507,7 +500,7 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
         return ConfigurationHelper.getInt(INCREMENT_PARAM, params, DEFAULT_INCREMENT_SIZE);
     }
 
-    @SuppressWarnings({"unchecked", "WeakerAccess"})
+    @SuppressWarnings({"WeakerAccess"})
     protected String buildSelectQuery(Dialect dialect) {
         final String alias = "tbl";
         final String query = "select " + StringHelper.qualify(alias, valueColumnName) +
@@ -560,28 +553,28 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
                                 final IntegralDataTypeHolder value = makeValue();
                                 int rows;
                                 do {
-                                    try (PreparedStatement selectPS = prepareStatement(
+                                    try (PreparedStatement selectStatement = prepareStatement(
                                             connection,
                                             selectQuery,
                                             statementLogger,
                                             statsCollector
                                     )) {
-                                        selectPS.setString(1, segmentValue);
-                                        final ResultSet selectRS = executeQuery(selectPS, statsCollector);
+                                        selectStatement.setString(1, segmentValue);
+                                        final ResultSet selectRS = executeQuery(selectStatement, statsCollector);
                                         if (!selectRS.next()) {
                                             long initializationValue = storeLastUsedValue ? initialValue - 1 : initialValue;
                                             value.initialize(initializationValue);
 
-                                            try (PreparedStatement insertPS = prepareStatement(
+                                            try (PreparedStatement insertStatement = prepareStatement(
                                                     connection,
                                                     insertQuery,
                                                     statementLogger,
                                                     statsCollector
                                             )) {
                                                 LOG.tracef("binding parameter [%s] - [%s]", 1, segmentValue);
-                                                insertPS.setString(1, segmentValue);
-                                                value.bind(insertPS, 2);
-                                                executeUpdate(insertPS, statsCollector);
+                                                insertStatement.setString(1, segmentValue);
+                                                value.bind(insertStatement, 2);
+                                                executeUpdate(insertStatement, statsCollector);
                                             }
                                         } else {
                                             int defaultValue = storeLastUsedValue ? 0 : 1;
@@ -594,7 +587,7 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
                                     }
 
 
-                                    try (PreparedStatement updatePS = prepareStatement(
+                                    try (PreparedStatement updateStatement = prepareStatement(
                                             connection,
                                             updateQuery,
                                             statementLogger,
@@ -606,10 +599,10 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
                                         } else {
                                             updateValue.increment();
                                         }
-                                        updateValue.bind(updatePS, 1);
-                                        value.bind(updatePS, 2);
-                                        updatePS.setString(3, segmentValue);
-                                        rows = executeUpdate(updatePS, statsCollector);
+                                        updateValue.bind(updateStatement, 1);
+                                        value.bind(updateStatement, 2);
+                                        updateStatement.setString(3, segmentValue);
+                                        rows = executeUpdate(updateStatement, statsCollector);
                                     } catch (SQLException e) {
                                         LOG.unableToUpdateQueryHiValue(renderedTableName, e);
                                         throw e;

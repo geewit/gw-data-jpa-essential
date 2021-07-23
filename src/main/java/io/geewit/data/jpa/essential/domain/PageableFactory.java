@@ -6,7 +6,7 @@ import org.springframework.data.domain.Sort;
 
 /**
  制造Pageable的工厂类
- @author gelif
+ @author geewit
  @since  2015-5-18
  */
 @SuppressWarnings({"unused"})
