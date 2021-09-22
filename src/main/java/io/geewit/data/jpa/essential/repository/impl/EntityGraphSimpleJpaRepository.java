@@ -100,16 +100,22 @@ public class EntityGraphSimpleJpaRepository<T, ID extends Serializable> extends 
         List<T> result = new ArrayList<>();
         int i = 0;
         for (Iterator<T> iterator = entities.iterator(); iterator.hasNext(); ) {
-            T entity = iterator.next();
-            entityManager.persist(entity);
             i++;
+            T entity = iterator.next();
+            if (entity != null) {
+                entityManager.persist(entity);
+            }
             if (i % BATCH_SIZE == 0 || !iterator.hasNext()) {
                 logger.info("Flushing the EntityManager containing {} entities ...", i);
-                entityManager.flush();
-                entityManager.clear();
+                if (entity != null) {
+                    entityManager.flush();
+                    entityManager.clear();
+                }
                 i = 0;
             }
-            result.add(entity);
+            if (entity != null) {
+                result.add(entity);
+            }
         }
         logger.info("Flushing the remaining entities ...");
         return result;
