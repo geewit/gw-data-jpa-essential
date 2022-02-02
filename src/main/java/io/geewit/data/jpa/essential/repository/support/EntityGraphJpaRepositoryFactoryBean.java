@@ -27,11 +27,11 @@ public class EntityGraphJpaRepositoryFactoryBean<R extends Repository<T, ID>, T,
         super(repositoryInterface);
     }
 
-    @Override
-    public void setEntityManager(EntityManager entityManager) {
-        /* Make sure to use the EntityManager able to inject captured EntityGraphs */
-        super.setEntityManager(RepositoryEntityManagerEntityGraphInjector.proxy(entityManager));
-    }
+//    @Override
+//    public void setEntityManager(EntityManager entityManager) {
+//        /* Make sure to use the EntityManager able to inject captured EntityGraphs */
+//        super.setEntityManager(RepositoryEntityManagerEntityGraphInjector.proxy(entityManager));
+//    }
 
     @Override
     protected RepositoryFactorySupport createRepositoryFactory(EntityManager entityManager) {
