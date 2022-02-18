@@ -1,10 +1,7 @@
 package io.geewit.data.jpa.essential.interceptor;
 
 import org.hibernate.EmptyInterceptor;
-import org.hibernate.type.AbstractStandardBasicType;
-import org.hibernate.type.CollectionType;
-import org.hibernate.type.Type;
-import org.hibernate.type.descriptor.converter.AttributeConverterTypeAdapter;
+import org.hibernate.type.*;
 
 import java.io.Serializable;
 import java.util.HashSet;
@@ -44,10 +41,10 @@ public class GwHibernateInterceptor extends EmptyInterceptor {
         Object newValue = currentState[i];
 
         if (oldValue != null || newValue != null) {
-            if (types[i] instanceof AttributeConverterTypeAdapter) {
-                equals = String.valueOf(oldValue).equals(String.valueOf(newValue));
-            } else if (types[i] instanceof AbstractStandardBasicType) {
+            if (types[i] instanceof BasicType) {
                 equals = types[i].isEqual(currentState[i], previousState[i]);
+            } else if (types[i] instanceof SingleColumnType) {
+                equals = String.valueOf(oldValue).equals(String.valueOf(newValue));
             } else if (!(types[i] instanceof CollectionType)) {
                 equals = Objects.equals(oldValue, newValue);
             }
