@@ -19,4 +19,9 @@ public interface Functions {
      * 按位异或运算
      */
     String BITWISE_XOR = "bitwiseXor";
+
+    /**
+     * group_concat
+     */
+    String GROUP_CONCAT = "group_concat";
 }
