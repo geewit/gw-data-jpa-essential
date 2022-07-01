@@ -1,9 +1,9 @@
 package io.geewit.data.jpa.essential.dialect;
 
 import io.geewit.data.jpa.essential.function.Functions;
-import io.geewit.data.jpa.essential.function.GroupConcatFunction;
 import org.hibernate.dialect.MySQL57Dialect;
 import org.hibernate.dialect.function.SQLFunctionTemplate;
+import org.hibernate.dialect.function.StandardSQLFunction;
 import org.hibernate.type.StandardBasicTypes;
 
 /**
@@ -19,6 +19,6 @@ public class GeewitMySQL57Dialect extends MySQL57Dialect {
                 "(?1 | ?2)"));
         super.registerFunction(Functions.BITWISE_XOR, new SQLFunctionTemplate(StandardBasicTypes.INTEGER,
                 "(?1 ^ ?2)"));
-        super.registerFunction(Functions.GROUP_CONCAT, new GroupConcatFunction());
+        super.registerFunction(Functions.GROUP_CONCAT, new StandardSQLFunction(Functions.GROUP_CONCAT));
     }
 }
