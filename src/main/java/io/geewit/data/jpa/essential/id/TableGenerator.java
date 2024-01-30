@@ -661,7 +661,6 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
         }
     }
 
-    @Override
     public String[] sqlCreateStrings(Dialect dialect) throws HibernateException {
         return new String[]{
                 dialect.getCreateTableString() + ' ' + renderedTableName + " ( "
@@ -671,7 +670,6 @@ public class TableGenerator implements PersistentIdentifierGenerator, Configurab
         };
     }
 
-    @Override
     public String[] sqlDropStrings(Dialect dialect) throws HibernateException {
         return new String[]{dialect.getDropTableString(renderedTableName)};
     }

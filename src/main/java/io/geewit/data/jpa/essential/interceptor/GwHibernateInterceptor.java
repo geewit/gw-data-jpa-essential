@@ -11,13 +11,18 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@SuppressWarnings({"unused"})
 public class GwHibernateInterceptor extends EmptyInterceptor {
 
     private static final long serialVersionUID = 1L;
 
     @Override
-    public int[] findDirty(Object entity, Serializable id, Object[] currentState, Object[] previousState,
-                           String[] propertyNames, Type[] types) {
+    public int[] findDirty(Object entity,
+                           Serializable id,
+                           Object[] currentState,
+                           Object[] previousState,
+                           String[] propertyNames,
+                           Type[] types) {
         Set<String> dirtyProperties = new HashSet<>();
         for (int i = 0; i < propertyNames.length; i++) {
             if (isModified(currentState, previousState, types, i)) {
@@ -35,7 +40,10 @@ public class GwHibernateInterceptor extends EmptyInterceptor {
     }
 
 
-    private boolean isModified(Object[] currentState, Object[] previousState, Type[] types, int i) {
+    private boolean isModified(Object[] currentState,
+                               Object[] previousState,
+                               Type[] types,
+                               int i) {
         boolean equals = true;
         Object oldValue = previousState[i];
         Object newValue = currentState[i];

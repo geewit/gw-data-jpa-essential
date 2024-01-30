@@ -24,4 +24,9 @@ public interface Functions {
      * group_concat
      */
     String GROUP_CONCAT = "group_concat";
+
+    /**
+     * subquery order by
+     */
+    String SUBQUERY_ORDER_BY = "order by";
 }
