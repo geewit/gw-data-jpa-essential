@@ -4,6 +4,7 @@ import io.geewit.snowflake.SnowFlake;
 import org.hibernate.HibernateException;
 import org.hibernate.MappingException;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
+import org.hibernate.id.Configurable;
 import org.hibernate.id.IdentifierGenerator;
 import org.hibernate.service.ServiceRegistry;
 import org.hibernate.type.Type;
@@ -21,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 2015-05-18
  */
 @SuppressWarnings({"unused"})
-public class SnowflakeGenerator implements IdentifierGenerator {
+public class SnowflakeGenerator implements IdentifierGenerator, Configurable {
     private static final Logger logger = LoggerFactory.getLogger(SnowflakeGenerator.class);
 
 
